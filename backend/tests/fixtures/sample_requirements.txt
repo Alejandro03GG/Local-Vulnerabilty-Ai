@@ -1,0 +1,18 @@
+# Sample requirements.txt for testing
+# This fixture contains packages that exist in the KEV fixture
+
+fastapi==0.115.0
+requests==2.31.0
+pydantic>=2.0,<3.0
+django==4.2.11
+sqlalchemy>=2.0
+# Comments should be ignored
+-r base.txt
+numpy
+flask==3.0.0
+
+# URL-based dependency (should be skipped)
+git+https://github.com/example/package.git
+
+# Environment markers (should be parsed, markers stripped)
+colorama==0.4.6; sys_platform == "win32"

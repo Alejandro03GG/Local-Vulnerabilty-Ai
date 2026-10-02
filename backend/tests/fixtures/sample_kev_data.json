@@ -1,0 +1,78 @@
+{
+  "title": "CISA Catalog of Known Exploited Vulnerabilities",
+  "catalogVersion": "2024.01.01",
+  "dateReleased": "2024-01-01T12:00:00.000Z",
+  "count": 5,
+  "vulnerabilities": [
+    {
+      "cveID": "CVE-2024-1000",
+      "vendorProject": "Django",
+      "product": "Django",
+      "vulnerabilityName": "Django SQL Injection Vulnerability",
+      "dateAdded": "2024-01-15",
+      "shortDescription": "Django contains a SQL injection vulnerability in the admin interface.",
+      "requiredAction": "Apply updates per vendor instructions.",
+      "dueDate": "2024-02-15",
+      "knownRansomwareCampaignUse": "Unknown",
+      "forensicTriage": "No",
+      "notes": "https://www.djangoproject.com/security/",
+      "cwes": ["CWE-89"]
+    },
+    {
+      "cveID": "CVE-2024-2000",
+      "vendorProject": "Fortinet",
+      "product": "FortiMail",
+      "vulnerabilityName": "Fortinet FortiMail Path Traversal Vulnerability",
+      "dateAdded": "2024-03-01",
+      "shortDescription": "Fortinet FortiMail contains a path traversal vulnerability.",
+      "requiredAction": "Apply mitigations per vendor instructions.",
+      "dueDate": "2024-03-15",
+      "knownRansomwareCampaignUse": "Known",
+      "forensicTriage": "Yes",
+      "notes": "https://fortiguard.fortinet.com/",
+      "cwes": ["CWE-22", "CWE-158"]
+    },
+    {
+      "cveID": "CVE-2024-3000",
+      "vendorProject": "Apache",
+      "product": "HTTP Server",
+      "vulnerabilityName": "Apache HTTP Server Buffer Overflow",
+      "dateAdded": "2024-04-01",
+      "shortDescription": "Apache HTTP Server contains a buffer overflow vulnerability.",
+      "requiredAction": "Apply updates per vendor instructions.",
+      "dueDate": "2024-04-15",
+      "knownRansomwareCampaignUse": "Unknown",
+      "forensicTriage": "No",
+      "notes": "",
+      "cwes": ["CWE-119"]
+    },
+    {
+      "cveID": "CVE-2024-4000",
+      "vendorProject": "Python",
+      "product": "Requests",
+      "vulnerabilityName": "Python Requests SSRF Vulnerability",
+      "dateAdded": "2024-05-01",
+      "shortDescription": "The Python Requests library contains an SSRF vulnerability.",
+      "requiredAction": "Update to latest version.",
+      "dueDate": "2024-05-15",
+      "knownRansomwareCampaignUse": "Unknown",
+      "forensicTriage": "No",
+      "notes": "",
+      "cwes": ["CWE-918"]
+    },
+    {
+      "cveID": "CVE-2024-5000",
+      "vendorProject": "Pallets",
+      "product": "Flask",
+      "vulnerabilityName": "Flask Debug Mode Information Disclosure",
+      "dateAdded": "2024-06-01",
+      "shortDescription": "Flask debug mode can leak sensitive information.",
+      "requiredAction": "Disable debug mode in production.",
+      "dueDate": "2024-06-15",
+      "knownRansomwareCampaignUse": "Unknown",
+      "forensicTriage": "No",
+      "notes": "",
+      "cwes": ["CWE-200"]
+    }
+  ]
+}

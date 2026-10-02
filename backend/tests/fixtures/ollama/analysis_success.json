@@ -1,0 +1,11 @@
+{
+  "explanation": "Django 4.2.11 is potentially exposed to this SQL injection issue if the vulnerable admin filtering logic is reached.",
+  "evidence": [
+    "Component name matches catalog product 'Django'",
+    "Advisory highlights SQL injection vector in admin"
+  ],
+  "contextual_findings": [
+    "Vulnerability is severe but exploitable only with staff-level admin access"
+  ],
+  "requires_human_review": true
+}

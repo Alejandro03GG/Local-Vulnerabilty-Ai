@@ -1,0 +1,25 @@
+{
+  "model": "tev1:4b",
+  "answers": {
+    "applicability": {
+      "value": "yes",
+      "probability": 0.85,
+      "distribution": {
+        "yes": 0.85,
+        "no": 0.15
+      }
+    },
+    "exposure": {
+      "value": "direct",
+      "distribution": {
+        "direct": 0.75,
+        "indirect": 0.15,
+        "unknown": 0.10
+      }
+    },
+    "urgency": {
+      "value": 8.5,
+      "score": 8.5
+    }
+  }
+}
