@@ -9,27 +9,32 @@ This document details the architecture, design principles, and operation of **Ph
 Local Vulnerability AI adheres to a strict pipeline:
 
 ```text
-Scanner
-   ↓ (Manifest components)
-CISA KEV
-   ↓ (Known exploited vulnerabilities)
-Deterministic Matcher
-   ↓ (Rule-based exact & normalized matching)
-AI Contextual Analysis
-   ↓ (Ollama LLM contextual narrative)
-Ollama SystemOne Decision
-   ↓ (Probabilistic evaluation: noul, choice, score)
-Deterministic Risk Engine
-   ↓ (Explicit audit rules)
-Risk Assessment & Structured Findings
+Scanner (Dependency manifests)
+   ↓ (DetectedComponent)
+Multi-Source Catalog (CISA KEV, OSV, NVD)
+   ↓ (Canonical catalog + Affected version ranges)
+Version-aware Matcher
+   ↓ (Ecosystem + Package + Range evaluation)
+MatchResult + Structured MatchEvidence
+   ↓
+Conflict Resolver (Deterministic disambiguation: complementary vs conflicting)
+   ↓ (Consolidated applicability)
+AI Contextual Analysis (Ollama LLM contextual narrative)
+   ↓
+Ollama SystemOne Decision (Probabilistic evaluation: noul, choice, score)
+   ↓
+Deterministic Risk Engine (Explicit audit rules)
+   ↓
+RiskAssessment & Structured Findings
 ```
 
 ### Core Principles
 
-1. **Deterministic Matcher First**: The AI does NOT search for or invent vulnerabilities. Vulnerability candidates are identified strictly by deterministic catalog lookups.
-2. **AI Does Not Decide Final Risk**: The LLM provides contextual explanations and nuance; it is never the sole authority declaring a component vulnerable.
-3. **Transparent Probabilities**: SystemOne decision probabilities indicate the model's evaluation over predefined options; they do not equate to a mathematically guaranteed real-world exploit certainty.
-4. **Local-First Privacy**: By default, all operations run on local hardware via SQLite and local Ollama instances. Source code is never transmitted externally.
+1. **Version-aware Matcher as Authority**: The matcher is the sole authority on version range applicability (`LIKELY_AFFECTED` vs `LIKELY_NOT_AFFECTED`). AI and SystemOne do NOT evaluate or override version math.
+2. **AI Contextual Analysis is Non-Decisive**: The LLM provides contextual explanations and nuance; it is never the authority declaring final risk. Source code is never transmitted to LLMs.
+3. **SystemOne is Probabilistic Decision Support**: SystemOne probabilities indicate model evaluation over predefined options; they do not overwrite deterministic version evidence.
+4. **Deterministic Risk Engine Produces Final Finding**: The Risk Engine uses explicit, auditable rules to synthesize applicability, source evidence, CVSS, KEV presence, and AI/SystemOne signals.
+5. **Local-First Privacy & Safe Fallback**: All operations run locally. When AI/SystemOne is offline, the pipeline falls back gracefully to conservative deterministic assessments without failing.
 
 ---
 
@@ -128,6 +133,7 @@ Every `RiskAssessment` records the exact audit trail of rules triggered:
 - `EXPOSURE_DIRECT` / `EXPOSURE_INDIRECT` / `EXPOSURE_UNKNOWN`: Evaluates runtime/manifest exposure posture.
 - `URGENCY_HIGH`: Urgency score $\ge 8.0$.
 - `CONFLICTING_SIGNALS`: Contradiction between AI narrative, high confidence matcher, or decision probabilities (mandates human triage).
+- `SOURCE_APPLICABILITY_CONFLICT`: Contradiction between multiple intelligence sources regarding version applicability (e.g. OSV says OUTSIDE while NVD says WITHIN). Forces `REQUIRES_REVIEW` and mandates human triage without forging applicability.
 - `AI_UNAVAILABLE_FALLBACK`: Applied when AI models cannot be reached.
 
 ---
@@ -137,3 +143,21 @@ Every `RiskAssessment` records the exact audit trail of rules triggered:
 - **No Source Code Leakage**: Scanners inspect dependency manifests (`requirements.txt`, `pyproject.toml`). Source code files (`.py`) are never sent to Ollama.
 - **Zero Cloud Leakage**: All default endpoints point to `http://localhost:11434` and local SQLite databases.
 - **Sanitized Observability**: Raw responses are logged without credentials, tokens, or environment secrets.
+
+---
+
+## 8. Multi-Source Conflict Resolution & Risk Engine Interaction
+
+In Stage 9, the Conflict Resolver sits upstream of both the AI Layer and the Risk Engine:
+
+1. **Separation of Concerns**:
+   - The **Version-aware Matcher** computes range boundaries for each source record.
+   - The **Conflict Resolver** analyzes the set of evidences deterministically:
+     - Disagreements on whether the installed version is affected produce `Applicability.REQUIRES_REVIEW` and `conflict_detected = True`.
+     - Distinct ranges that both encompass or both exclude the version produce consensus without false conflict.
+     - Presence in CISA KEV (`DETECTED`) complements but never falsifies verified version non-applicability.
+2. **Authoritative Consumption by the Risk Engine**:
+   - When `match.applicability == Applicability.REQUIRES_REVIEW` due to conflicting sources, the Risk Engine fires `SOURCE_APPLICABILITY_CONFLICT`.
+   - The assessment status is set to `RiskStatus.REQUIRES_REVIEW` with `requires_human_review = True`.
+   - The Risk Engine never converts `REQUIRES_REVIEW` to `LIKELY_AFFECTED`.
+

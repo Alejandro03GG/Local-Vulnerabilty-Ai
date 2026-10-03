@@ -144,3 +144,58 @@ async def test_get_scan_not_found(api_client: AsyncClient):
     response = await api_client.get("/api/v1/scans/missing-id")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "SCAN_NOT_FOUND"
+
+
+async def test_get_scan_dependencies(
+    api_client: AsyncClient,
+    sample_project_dir: Path,
+):
+    """GET /api/v1/scans/{id}/dependencies returns component list with direct/transitive flags."""
+    proj_res = await api_client.post(
+        "/api/v1/projects",
+        json={"name": "scan-deps-proj", "path": str(sample_project_dir)},
+    )
+    proj_id = proj_res.json()["id"]
+
+    scan_res = await api_client.post(f"/api/v1/projects/{proj_id}/scans", json={"run_ai": False})
+    scan_id = scan_res.json()["id"]
+
+    deps_res = await api_client.get(f"/api/v1/scans/{scan_id}/dependencies")
+    assert deps_res.status_code == 200
+    data = deps_res.json()
+    assert isinstance(data, list)
+    assert len(data) > 0
+    assert "is_direct" in data[0]
+    assert "dependency_type" in data[0]
+
+    # 404 case
+    not_found = await api_client.get("/api/v1/scans/non-existent-scan/dependencies")
+    assert not_found.status_code == 404
+
+
+async def test_get_scan_dependency_graph(
+    api_client: AsyncClient,
+    sample_project_dir: Path,
+):
+    """GET /api/v1/scans/{id}/dependencies/graph returns nodes, edges, and counts."""
+    proj_res = await api_client.post(
+        "/api/v1/projects",
+        json={"name": "scan-graph-proj", "path": str(sample_project_dir)},
+    )
+    proj_id = proj_res.json()["id"]
+
+    scan_res = await api_client.post(f"/api/v1/projects/{proj_id}/scans", json={"run_ai": False})
+    scan_id = scan_res.json()["id"]
+
+    graph_res = await api_client.get(f"/api/v1/scans/{scan_id}/dependencies/graph")
+    assert graph_res.status_code == 200
+    data = graph_res.json()
+    assert data["project_id"] == proj_id
+    assert "components" in data
+    assert "edges" in data
+    assert "direct_count" in data
+    assert "transitive_count" in data
+
+    # 404 case
+    not_found = await api_client.get("/api/v1/scans/non-existent-scan/dependencies/graph")
+    assert not_found.status_code == 404

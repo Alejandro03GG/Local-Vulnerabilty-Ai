@@ -1,0 +1,50 @@
+lockfileVersion: '6.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+  .:
+    dependencies:
+      axios:
+        specifier: ^1.7.0
+        version: 1.7.2
+
+packages:
+  /axios@1.7.2:
+    resolution: {integrity: sha512-Rhy+huJ6VQU6m8NCL}
+    dependencies:
+      follow-redirects: 1.15.6
+      form-data: 4.0.0
+    dev: false
+
+  /follow-redirects@1.15.6:
+    resolution: {integrity: sha512-GQ2E32nUfCS}
+    dev: false
+
+  /form-data@4.0.0:
+    resolution: {integrity: sha512-VCd47}
+    dependencies:
+      asynckit: 0.4.0
+      combined-stream: 1.0.8
+      mime-types: 2.1.35
+    dev: false
+
+  /asynckit@0.4.0:
+    resolution: {integrity: sha512-c4}
+    dev: false
+
+  /combined-stream@1.0.8:
+    resolution: {integrity: sha512-d}
+    dependencies:
+      delayed-stream: 1.0.0
+    dev: false
+
+  /delayed-stream@1.0.0:
+    resolution: {integrity: sha512-e}
+    dev: false
+
+  /mime-types@2.1.35:
+    resolution: {integrity: sha512-f}
+    dev: false

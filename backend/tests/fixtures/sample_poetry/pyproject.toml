@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "sample-poetry-app"
+version = "0.1.0"
+description = "Sample poetry project"
+authors = ["Test <test@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "0.115.6"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"

@@ -11,8 +11,13 @@ from vuln_ai.ai.questions import get_default_decision_questions
 from vuln_ai.ai.registry import AIRegistry
 from vuln_ai.api.errors import NotFoundError
 from vuln_ai.api.schemas.ai import AIAnalysisResponse, DecisionResultResponse
+from vuln_ai.api.schemas.common import PaginatedResponse
 from vuln_ai.api.schemas.components import ComponentResponse
-from vuln_ai.api.schemas.matches import MatchResponse
+from vuln_ai.api.schemas.matches import (
+    MatchEvidenceResponse,
+    MatchResponse,
+    SourceConflictResponse,
+)
 from vuln_ai.api.schemas.risk import RiskAssessmentResponse
 from vuln_ai.api.schemas.vulnerabilities import VulnerabilityResponse
 from vuln_ai.core.models import (
@@ -67,6 +72,11 @@ class MatchService:
 
         comp_resp = None
         if db_match.component:
+            path_list: list[str] = []
+            if getattr(db_match.component, "dependency_path", None):
+                with contextlib.suppress(Exception):
+                    path_list = json.loads(db_match.component.dependency_path)
+
             comp_resp = ComponentResponse(
                 id=db_match.component.id,
                 project_id=db_match.component.project_id,
@@ -77,6 +87,13 @@ class MatchService:
                 source_file=db_match.component.source_file,
                 ecosystem=db_match.component.ecosystem,
                 component_type=db_match.component.component_type,
+                is_direct=getattr(db_match.component, "is_direct", True),
+                dependency_type=getattr(db_match.component, "dependency_type", "direct"),
+                scope=getattr(db_match.component, "scope", "runtime"),
+                manifest_source=getattr(db_match.component, "manifest_source", None),
+                lockfile_source=getattr(db_match.component, "lockfile_source", None),
+                parent_name=getattr(db_match.component, "parent_name", None),
+                dependency_path=path_list,
                 detected_at=db_match.component.detected_at,
             )
 
@@ -146,6 +163,58 @@ class MatchService:
                 assessed_at=risk_domain.assessed_at,
             )
 
+        structured_evidences = []
+        if getattr(db_match, "structured_evidences", None):
+            for ev in db_match.structured_evidences:
+                structured_evidences.append(
+                    MatchEvidenceResponse(
+                        source_name=ev.source_name,
+                        identifier=ev.identifier,
+                        package_name=ev.package_name,
+                        ecosystem=ev.ecosystem,
+                        installed_version=ev.installed_version,
+                        affected_range=ev.affected_range,
+                        fixed_version=ev.fixed_version,
+                        status=ev.status,
+                        evidence_type=ev.evidence_type,
+                        details=ev.details,
+                    )
+                )
+
+        conflicts = []
+        if getattr(db_match, "conflicts", None):
+            for c in db_match.conflicts:
+                sources = []
+                identifiers = []
+                values = {}
+                if c.sources:
+                    with contextlib.suppress(json.JSONDecodeError, TypeError):
+                        sources = (
+                            json.loads(c.sources) if isinstance(c.sources, str) else c.sources
+                        )
+                if c.identifiers:
+                    with contextlib.suppress(json.JSONDecodeError, TypeError):
+                        identifiers = (
+                            json.loads(c.identifiers)
+                            if isinstance(c.identifiers, str)
+                            else c.identifiers
+                        )
+                if c.values:
+                    with contextlib.suppress(json.JSONDecodeError, TypeError):
+                        values = json.loads(c.values) if isinstance(c.values, str) else c.values
+                conflicts.append(
+                    SourceConflictResponse(
+                        conflict_type=c.conflict_type,
+                        severity=c.severity,
+                        field=c.field,
+                        sources=sources,
+                        identifiers=identifiers,
+                        values=values,
+                        resolution=c.resolution,
+                        rationale=c.rationale,
+                    )
+                )
+
         return MatchResponse(
             id=db_match.id,
             scan_id=db_match.scan_id,
@@ -161,6 +230,29 @@ class MatchService:
             ai_analysis=ai_resp,
             decision_result=dec_resp,
             risk_assessment=risk_resp,
+            structured_evidences=structured_evidences,
+            conflicts=conflicts,
+        )
+
+    async def list_matches(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        scan_id: str | None = None,
+        applicability: str | None = None,
+    ) -> PaginatedResponse[MatchResponse]:
+        """List matches paginated with optional filtering."""
+        items, total = await self._match_repo.list_paginated(
+            page=page,
+            page_size=page_size,
+            scan_id=scan_id,
+            applicability=applicability,
+        )
+        return PaginatedResponse(
+            items=[self._to_match_response(m) for m in items],
+            page=page,
+            page_size=page_size,
+            total=total,
         )
 
     async def get_match(self, match_id: str) -> MatchResponse:

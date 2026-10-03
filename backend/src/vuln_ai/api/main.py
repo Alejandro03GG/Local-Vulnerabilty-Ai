@@ -14,10 +14,13 @@ from vuln_ai.api.routers import (
     ai_router,
     components_router,
     health_router,
+    images_router,
     matches_router,
+    policies_router,
     projects_router,
     scans_router,
     sources_router,
+    suppressions_router,
     vulnerabilities_router,
 )
 from vuln_ai.config import Settings, get_settings
@@ -75,6 +78,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api_v1.include_router(sources_router)
     api_v1.include_router(matches_router)
     api_v1.include_router(ai_router)
+    api_v1.include_router(policies_router)
+    api_v1.include_router(suppressions_router)
+    api_v1.include_router(images_router)
 
     app.include_router(api_v1)
 

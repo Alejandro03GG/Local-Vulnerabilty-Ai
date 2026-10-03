@@ -25,6 +25,9 @@ class Ecosystem(enum.StrEnum):
     GO = "go"
     MAVEN = "maven"
     NUGET = "nuget"
+    DEB = "deb"
+    APK = "apk"
+    RPM = "rpm"
     UNKNOWN = "unknown"
 
 
@@ -35,6 +38,7 @@ class ComponentType(enum.StrEnum):
     FRAMEWORK = "framework"
     RUNTIME = "runtime"
     TOOL = "tool"
+    OS_PACKAGE = "os_package"
     UNKNOWN = "unknown"
 
 
@@ -88,6 +92,24 @@ class Applicability(enum.StrEnum):
 # --- Domain Models ---
 
 
+class DependencyType(enum.StrEnum):
+    """Direct vs Transitive dependency classification."""
+
+    DIRECT = "direct"
+    TRANSITIVE = "transitive"
+    UNKNOWN = "unknown"
+
+
+class DependencyScope(enum.StrEnum):
+    """Dependency installation or runtime scope."""
+
+    RUNTIME = "runtime"
+    DEV = "dev"
+    OPTIONAL = "optional"
+    PEER = "peer"
+    UNKNOWN = "unknown"
+
+
 class DetectedComponent(BaseModel):
     """A software component detected in a project."""
 
@@ -104,19 +126,146 @@ class DetectedComponent(BaseModel):
     ecosystem: Ecosystem = Field(description="Package ecosystem")
     source_file: str = Field(description="File where component was detected")
     component_type: ComponentType = Field(default=ComponentType.LIBRARY)
+    is_direct: bool = Field(default=True, description="Whether component is a direct dependency")
+    dependency_type: DependencyType | str = Field(
+        default=DependencyType.DIRECT, description="Direct or transitive"
+    )
+    scope: DependencyScope | str = Field(
+        default=DependencyScope.RUNTIME, description="Lifecycle or install scope"
+    )
+    manifest_source: str | None = Field(
+        default=None, description="Manifest declaring the dependency"
+    )
+    lockfile_source: str | None = Field(
+        default=None, description="Lockfile resolving the exact version"
+    )
+    parent_name: str | None = Field(
+        default=None, description="Parent dependency package name if transitive"
+    )
+    dependency_path: list[str] = Field(
+        default_factory=list, description="Ancestor dependency chain from project root"
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional dependency metadata"
+    )
 
     def normalized_name(self) -> str:
         """Return normalized component name for matching."""
         return normalize_component_name(self.name)
 
+    def component_key(self) -> tuple[str, str | None, str]:
+        """Return unique component identity tuple (name, version, source_file)."""
+        return (self.normalized_name(), self.version, self.source_file)
+
+
+class IdentifierType(enum.StrEnum):
+    """Types of vulnerability identifiers."""
+
+    CVE = "cve"
+    GHSA = "ghsa"
+    OSV = "osv"
+    PYSEC = "pysec"
+    ALIAS = "alias"
+    OTHER = "other"
+
+
+class EvidenceType(enum.StrEnum):
+    """Categorization of match evidence."""
+
+    RANGE_CONFIRMED = "range_confirmed"
+    OUTSIDE_RANGE = "outside_range"
+    PRODUCT_NAME_ONLY = "product_name_only"
+    SOURCE_CONFLICT = "source_conflict"
+    VERSION_UNKNOWN = "version_unknown"
+
+
+class VulnerabilityIdentifier(BaseModel):
+    """An identifier or alias for a vulnerability (CVE, GHSA, OSV, etc.)."""
+
+    identifier: str = Field(description="Identifier string (e.g. 'CVE-2024-1234', 'GHSA-xxxx')")
+    identifier_type: IdentifierType | str = Field(
+        default=IdentifierType.CVE,
+        description="Type of identifier",
+    )
+    source: str = Field(default="unknown", description="Source that reported this identifier")
+
+
+class AffectedVersionRange(BaseModel):
+    """An affected version range for a specific ecosystem package."""
+
+    ecosystem: Ecosystem | str = Field(description="Package ecosystem (e.g. pypi, npm)")
+    package_name: str = Field(description="Target package name")
+    range_type: str = Field(
+        default="ecosystem", description="Range standard (e.g. ecosystem, semver, pep440)"
+    )
+    introduced: str | None = Field(default=None, description="Starting version introduced")
+    fixed: str | None = Field(default=None, description="Version where vulnerability was fixed")
+    last_affected: str | None = Field(
+        default=None, description="Last vulnerable version before fix"
+    )
+    limit: str | None = Field(
+        default=None,
+        description="Exclusive upper bound (OSV 'limit' event, not a fix)",
+    )
+    raw_range: str | None = Field(
+        default=None, description="Raw expression if available (e.g. '< 2.32.0')"
+    )
+    source_name: str = Field(default="unknown", description="Source reporting this range")
+
+
+class VulnerabilitySourceRecord(BaseModel):
+    """A record of evidence contributed by a specific vulnerability source."""
+
+    source_id: str | None = Field(default=None, description="Database ID of vulnerability source")
+    source_name: str = Field(description="Name of the source (e.g. 'CISA KEV', 'OSV', 'NVD')")
+    source_identifier: str = Field(description="Identifier used by this source")
+    has_kev_evidence: bool = Field(
+        default=False, description="Whether source provides KEV confirmation"
+    )
+    has_affected_range: bool = Field(
+        default=False, description="Whether source provides version ranges"
+    )
+    raw_payload: dict[str, Any] = Field(default_factory=dict, description="Raw source payload")
+    synced_at: datetime | None = Field(default=None, description="Sync timestamp")
+
+
+class MatchEvidence(BaseModel):
+    """Structured, auditable evidence supporting a match determination."""
+
+    source_name: str = Field(description="Source contributing this evidence")
+    identifier: str = Field(description="Vulnerability identifier")
+    package_name: str = Field(description="Package evaluated")
+    ecosystem: Ecosystem | str = Field(description="Package ecosystem")
+    installed_version: str | None = Field(default=None, description="Installed component version")
+    affected_range: str | None = Field(
+        default=None, description="Affected version range evaluated"
+    )
+    fixed_version: str | None = Field(default=None, description="Fixed version if specified")
+    status: Applicability = Field(
+        default=Applicability.UNKNOWN, description="Source-level applicability"
+    )
+    evidence_type: EvidenceType | str = Field(
+        default=EvidenceType.PRODUCT_NAME_ONLY,
+        description="Type of evidence",
+    )
+    details: str = Field(default="", description="Human-readable explanation of evaluation")
+    created_at: datetime | None = Field(default=None, description="Timestamp")
+
 
 class VulnerabilityRecord(BaseModel):
-    """A vulnerability record from an external source."""
+    """A canonical vulnerability record independent of any specific source.
 
-    cve_id: str = Field(description="CVE identifier (e.g., 'CVE-2024-1234')")
-    source_name: str = Field(description="Name of the source (e.g., 'CISA KEV')")
-    vendor_project: str = Field(description="Vendor or project name")
-    product: str = Field(description="Product name")
+    May represent vulnerabilities identified via CVE, GHSA, OSV, PYSEC, or other schemes.
+    Retains backwards compatibility with cve_id while making canonical_id the primary identifier.
+    """
+
+    canonical_id: str = Field(
+        default="", description="Primary canonical identifier (CVE, GHSA, OSV, etc.)"
+    )
+    cve_id: str | None = Field(default=None, description="CVE identifier if assigned")
+    source_name: str = Field(default="unknown", description="Primary or discovering source name")
+    vendor_project: str = Field(default="", description="Vendor or project name")
+    product: str = Field(default="", description="Product name")
     vulnerability_name: str = Field(default="", description="Human-readable vulnerability name")
     short_description: str = Field(default="", description="Brief description")
     required_action: str = Field(default="", description="Recommended action")
@@ -128,6 +277,52 @@ class VulnerabilityRecord(BaseModel):
     )
     cwes: list[str] = Field(default_factory=list, description="Associated CWE identifiers")
     notes: str = Field(default="", description="Additional notes or references")
+    severity: str | None = Field(default=None, description="Severity rating if known")
+    cvss_score: float | None = Field(default=None, description="CVSS numerical score")
+    identifiers: list[VulnerabilityIdentifier] = Field(
+        default_factory=list,
+        description="All known identifiers/aliases",
+    )
+    source_records: list[VulnerabilitySourceRecord] = Field(
+        default_factory=list,
+        description="Source-specific records and evidence",
+    )
+    affected_ranges: list[AffectedVersionRange] = Field(
+        default_factory=list,
+        description="Known affected version ranges",
+    )
+
+    def model_post_init(self, __context: Any) -> None:
+        """Ensure canonical_id and cve_id coherence for backward compatibility."""
+        if not self.canonical_id:
+            if self.cve_id:
+                self.canonical_id = self.cve_id
+            elif self.identifiers:
+                self.canonical_id = self.identifiers[0].identifier
+            else:
+                self.canonical_id = "UNKNOWN-VULN"
+
+        if not self.cve_id and self.canonical_id.upper().startswith("CVE-"):
+            self.cve_id = self.canonical_id
+
+        # Populate initial identifier if empty
+        if not self.identifiers and self.canonical_id:
+            id_type = (
+                IdentifierType.CVE
+                if self.canonical_id.upper().startswith("CVE-")
+                else (
+                    IdentifierType.GHSA
+                    if self.canonical_id.upper().startswith("GHSA-")
+                    else IdentifierType.OTHER
+                )
+            )
+            self.identifiers.append(
+                VulnerabilityIdentifier(
+                    identifier=self.canonical_id,
+                    identifier_type=id_type,
+                    source=self.source_name,
+                )
+            )
 
     def normalized_vendor(self) -> str:
         """Return normalized vendor name."""
@@ -136,6 +331,16 @@ class VulnerabilityRecord(BaseModel):
     def normalized_product(self) -> str:
         """Return normalized product name."""
         return normalize_component_name(self.product)
+
+    @property
+    def has_kev_evidence(self) -> bool:
+        """Return True if this vulnerability has KEV confirmation from any source."""
+        if self.source_name == "CISA KEV":
+            return True
+        return any(
+            getattr(sr, "has_kev_evidence", False) or getattr(sr, "source_name", "") == "CISA KEV"
+            for sr in self.source_records
+        )
 
 
 class MatchResult(BaseModel):
@@ -155,7 +360,11 @@ class MatchResult(BaseModel):
     )
     evidence: list[str] = Field(
         default_factory=list,
-        description="Evidence supporting the match",
+        description="Evidence supporting the match (legacy summary format)",
+    )
+    structured_evidences: list[MatchEvidence] = Field(
+        default_factory=list,
+        description="Structured, auditable evidence records",
     )
     ai_analysis: Any = Field(
         default=None,
@@ -169,6 +378,23 @@ class MatchResult(BaseModel):
         default=None,
         description="Deterministic risk assessment if evaluated",
     )
+    conflicts: list[Any] = Field(
+        default_factory=list,
+        description="Source conflicts detected during multi-source correlation",
+    )
+    conflict_resolution: Any = Field(
+        default=None,
+        description="Consolidated applicability resolution summary",
+    )
+
+    def model_post_init(self, __context: Any) -> None:
+        """Sync evidence strings with structured_evidences if empty."""
+        if not self.evidence and self.structured_evidences:
+            for ev in self.structured_evidences:
+                self.evidence.append(
+                    f"[{ev.source_name}] {ev.identifier} for {ev.package_name}: "
+                    f"{ev.status.value.upper()} (type: {ev.evidence_type}) - {ev.details}"
+                )
 
 
 class SyncResult(BaseModel):
@@ -189,12 +415,21 @@ class ScanResultSummary(BaseModel):
     project_path: str
     scan_status: ScanStatus
     components_found: int = 0
+    direct_components_count: int = 0
+    transitive_components_count: int = 0
+    dependency_edges_count: int = 0
+    lockfiles_detected: list[str] = Field(default_factory=list)
     vulnerabilities_checked: int = 0
     matches_found: int = 0
     kev_matches: int = 0
     duration_seconds: float = 0.0
     error: str | None = None
     matches: list[MatchResult] = Field(default_factory=list)
+    dependency_graph: Any = Field(
+        default=None, description="In-memory dependency graph if resolved"
+    )
+    scan_id: str | None = Field(default=None, description="Database scan ID if persisted")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Arbitrary scan metadata")
 
 
 class SourceInfo(BaseModel):

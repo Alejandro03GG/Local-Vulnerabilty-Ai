@@ -283,3 +283,22 @@ async def test_reanalyze_match_not_found(api_client: AsyncClient):
     response = await api_client.post("/api/v1/matches/missing-id/reanalyze")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "MATCH_NOT_FOUND"
+
+
+async def test_list_matches_paginated(
+    api_client: AsyncClient,
+    db_session: AsyncSession,
+    sample_project_dir: Path,
+):
+    """GET /api/v1/matches returns paginated matches with structured evidences and conflicts."""
+    match_id = await _setup_scan_with_match(api_client, db_session, sample_project_dir)
+
+    response = await api_client.get("/api/v1/matches?page=1&page_size=10")
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    assert data["total"] >= 1
+    assert any(m["id"] == match_id for m in data["items"])
+    target = next(m for m in data["items"] if m["id"] == match_id)
+    assert "structured_evidences" in target
+    assert "conflicts" in target

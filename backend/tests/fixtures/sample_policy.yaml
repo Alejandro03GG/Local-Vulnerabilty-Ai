@@ -1,0 +1,41 @@
+version: "1"
+
+policy:
+  name: default-security-policy
+  description: Baseline corporate security policy
+  thresholds:
+    fail_on:
+      - HIGH
+      - CRITICAL
+    fail_on_review: false
+
+  rules:
+    - id: block-cisa-kev
+      description: Block known exploited vulnerabilities
+      when:
+        has_kev_evidence: true
+      action: BLOCK
+      priority: 10
+
+    - id: review-source-conflicts
+      description: Require review when advisory sources disagree
+      when:
+        conflict_detected: true
+      action: REQUIRE_REVIEW
+      priority: 20
+
+    - id: block-critical-risk
+      description: Block any finding with critical assessed risk
+      when:
+        risk_level: CRITICAL
+      action: BLOCK
+      priority: 30
+
+  suppressions:
+    - id: SUP-001
+      match_criteria:
+        vulnerability_id: CVE-2023-32681
+      reason: Vendor patch scheduled next sprint
+      owner: sec-team@example.com
+      reference: SEC-2026-0042
+      expires_at: "2027-12-31T23:59:59Z"

@@ -1,0 +1,8 @@
+[package]
+name = "sample-cargo-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = "1.36.0"
+serde = "1.0.197"

@@ -10,7 +10,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from vuln_ai.api.deps import get_app_settings, get_db
+from vuln_ai.ai.registry import AIRegistry
+from vuln_ai.api.deps import get_ai_registry, get_app_settings, get_db
 from vuln_ai.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -33,18 +34,11 @@ async def health_check(
 async def readiness_check(
     db: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_app_settings)],
+    ai_registry: Annotated[AIRegistry, Depends(get_ai_registry)],
 ) -> JSONResponse:
-    """Verify that the database is reachable and the application is ready to accept traffic."""
+    """Verify that database is reachable and return granular component readiness."""
     try:
         await db.execute(text("SELECT 1"))
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={
-                "status": "ready",
-                "database": "connected",
-                "version": settings.api.version,
-            },
-        )
     except Exception as exc:
         logger.error("Readiness check database failure: %s", exc)
         return JSONResponse(
@@ -55,3 +49,24 @@ async def readiness_check(
                 "error": str(exc),
             },
         )
+
+    # Diagnostic check for contextual AI support (non-blocking for readiness)
+    ai_state = "disabled"
+    if settings.ai.enabled:
+        ai_state = "unavailable"
+        try:
+            provider = ai_registry.get_ai_provider()
+            if provider and await provider.is_available():
+                ai_state = "available"
+        except Exception:
+            ai_state = "unavailable"
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "status": "ready",
+            "database": "connected",
+            "ai": ai_state,
+            "version": settings.api.version,
+        },
+    )

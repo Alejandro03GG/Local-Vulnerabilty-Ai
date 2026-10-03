@@ -9,12 +9,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from vuln_ai.ai.registry import AIRegistry
 from vuln_ai.api.errors import BadRequestError, NotFoundError
 from vuln_ai.api.schemas.common import PaginatedResponse
+from vuln_ai.api.schemas.components import (
+    ComponentResponse,
+    DependencyEdgeResponse,
+    DependencyGraphResponse,
+)
 from vuln_ai.api.schemas.scans import ScanResponse, ScanSummary
+from vuln_ai.api.services.component_service import ComponentService
 from vuln_ai.api.services.match_service import MatchService
 from vuln_ai.core.engine import ScanEngine
 from vuln_ai.core.models import ScanStatus
-from vuln_ai.db.models import ScanDB
+from vuln_ai.db.models import MatchDB, ScanDB
 from vuln_ai.db.repositories import (
+    ComponentRepository,
     MatchRepository,
     ProjectRepository,
     RiskAssessmentRepository,
@@ -44,6 +51,7 @@ class ScanService:
         ai_registry: AIRegistry | None = None,
         risk_engine: DeterministicRiskEngine | None = None,
         match_service: MatchService | None = None,
+        component_repo: ComponentRepository | None = None,
     ) -> None:
         self._session = session
         self._scan_repo = scan_repo
@@ -56,31 +64,29 @@ class ScanService:
         self._ai_registry = ai_registry
         self._risk_engine = risk_engine or DeterministicRiskEngine()
         self._match_service = match_service
+        self._component_repo = component_repo or ComponentRepository(session)
 
-    async def _compute_summary(self, scan_id: str, db_scan: ScanDB) -> ScanSummary:
-        matches = await self._match_repo.get_by_scan(scan_id)
+    def _compute_summary(self, db_matches: list[MatchDB], db_scan: ScanDB) -> ScanSummary:
         requires_review_count = 0
-        for m in matches:
-            assessment = await self._risk_assessments_repo.get_by_match_id(m.id)
-            if assessment and assessment.requires_human_review:
+        for m in db_matches:
+            if (
+                m.risk_assessment and m.risk_assessment.requires_human_review
+            ) or m.applicability == "REQUIRES_REVIEW":
                 requires_review_count += 1
 
         return ScanSummary(
             components=db_scan.components_found,
-            matches=len(matches),
+            matches=len(db_matches),
             kev_matches=db_scan.kev_matches,
             requires_review=requires_review_count,
         )
 
     async def _to_response(self, db_scan: ScanDB, include_matches: bool = False) -> ScanResponse:
-        summary = await self._compute_summary(db_scan.id, db_scan)
+        db_matches = await self._match_repo.get_by_scan(db_scan.id)
+        summary = self._compute_summary(db_matches, db_scan)
         matches_resp = None
         if include_matches and self._match_service is not None:
-            db_matches = await self._match_repo.get_by_scan(db_scan.id)
-            matches_resp = []
-            for m in db_matches:
-                full_match = await self._match_service.get_match(m.id)
-                matches_resp.append(full_match)
+            matches_resp = [self._match_service._to_match_response(m) for m in db_matches]
 
         return ScanResponse(
             id=db_scan.id,
@@ -170,3 +176,103 @@ class ScanService:
                 code="SCAN_NOT_FOUND",
             )
         return await self._to_response(scan, include_matches=True)
+
+    async def get_scan_dependencies(self, scan_id: str) -> list[ComponentResponse]:
+        """Get resolved components for a scan's project."""
+        scan = await self._scan_repo.get_by_id(scan_id)
+        if scan is None:
+            raise NotFoundError(
+                message=f"Scan with ID '{scan_id}' not found",
+                code="SCAN_NOT_FOUND",
+            )
+        comps = await self._component_repo.get_by_project(scan.project_id)
+        return [ComponentService.to_response(c) for c in comps]
+
+    async def get_scan_dependency_graph(self, scan_id: str) -> DependencyGraphResponse:
+        """Get full dependency graph topology for a scan's project."""
+        scan = await self._scan_repo.get_by_id(scan_id)
+        if scan is None:
+            raise NotFoundError(
+                message=f"Scan with ID '{scan_id}' not found",
+                code="SCAN_NOT_FOUND",
+            )
+        comps = await self._component_repo.get_by_project(scan.project_id)
+        edges = await self._component_repo.get_dependency_edges(scan.project_id)
+
+        comp_responses = [ComponentService.to_response(c) for c in comps]
+        edge_responses = [
+            DependencyEdgeResponse(
+                parent_name=e.parent_name,
+                parent_version=e.parent_version,
+                child_name=e.child_name,
+                child_version=e.child_version,
+                scope=e.scope,
+                requirement=e.requirement,
+            )
+            for e in edges
+        ]
+
+        direct_count = sum(1 for c in comp_responses if c.is_direct)
+        transitive_count = len(comp_responses) - direct_count
+        lockfiles = sorted({c.lockfile_source for c in comp_responses if c.lockfile_source})
+        manifests = sorted({c.manifest_source for c in comp_responses if c.manifest_source})
+
+        return DependencyGraphResponse(
+            project_id=scan.project_id,
+            direct_count=direct_count,
+            transitive_count=transitive_count,
+            edges_count=len(edge_responses),
+            lockfiles_detected=lockfiles,
+            manifests_detected=manifests,
+            components=comp_responses,
+            edges=edge_responses,
+        )
+
+    async def export_scan(
+        self,
+        scan_id: str,
+        export_format: str,
+    ) -> tuple[str, str, str]:
+        """Export a completed scan to the specified format (sarif, cyclonedx, spdx).
+
+        Returns:
+            Tuple of (serialized_content, media_type, filename)
+        """
+        from vuln_ai.export.models import ExportFormat, ExportScan
+        from vuln_ai.export.service import ExportService
+
+        scan = await self._scan_repo.get_by_id(scan_id)
+        if scan is None:
+            raise NotFoundError(
+                message=f"Scan with ID '{scan_id}' not found",
+                code="SCAN_NOT_FOUND",
+            )
+
+        project = await self._project_repo.get_by_id(scan.project_id)
+        comps = await self._component_repo.get_by_project(scan.project_id)
+        edges = await self._component_repo.get_dependency_edges(scan.project_id)
+        matches = await self._match_repo.get_by_scan(scan_id)
+
+        export_scan_model = ExportScan.from_db(
+            scan=scan,
+            project=project,
+            components=comps,
+            edges=edges,
+            matches=matches,
+        )
+
+        content = ExportService.serialize_text(export_scan_model, export_format)
+        media_type = ExportService.get_media_type(export_format)
+
+        ext_map = {
+            ExportFormat.SARIF.value: "sarif",
+            ExportFormat.CYCLONEDX.value: "cdx.json",
+            ExportFormat.SPDX.value: "spdx.json",
+        }
+        proj_name = (getattr(project, "name", "project") if project else "project").replace(
+            " ", "_"
+        )
+        ext = ext_map.get(export_format.lower(), "json")
+        filename = f"{proj_name}_{scan_id[:8]}.{ext}"
+
+        return content, media_type, filename

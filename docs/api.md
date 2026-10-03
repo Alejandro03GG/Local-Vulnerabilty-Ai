@@ -267,42 +267,43 @@ All client and server errors return a standard JSON envelope with machine-readab
 
 ---
 
-## 6. Running Locally
+## 6. End-to-End Setup & Execution Workflow
 
-### Development Server
+Follow this clean 7-step flow for local development and integration:
 
-Start the API with hot reloading:
+1. **Backend setup**:
+   ```bash
+   cd backend
+   python3 -m venv .venv && source .venv/bin/activate
+   pip install -e ".[dev]"
+   ```
+2. **Database migration**:
+   ```bash
+   alembic upgrade head
+   ```
+3. **Environment variables**:
+   ```bash
+   cp backend/.env.example backend/.env
+   cp frontend/.env.example frontend/.env
+   ```
+4. **Start API**:
+   ```bash
+   uvicorn vuln_ai.api.main:app --reload --host 127.0.0.1 --port 8000
+   ```
+5. **Frontend setup**:
+   ```bash
+   cd frontend && npm install
+   ```
+6. **Start frontend**:
+   ```bash
+   npm run dev
+   ```
+7. **Run tests**:
+   ```bash
+   # Backend:
+   pytest --cov=src --cov-fail-under=95
+   ruff check src tests && ruff format --check src tests
 
-```bash
-uvicorn vuln_ai.api.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-### Environment Variables
-
-Configure API settings via environment variables:
-
-| Variable | Default | Description |
-|---|---|---|
-| `VULN_AI_API__HOST` | `127.0.0.1` | API server listen host |
-| `VULN_AI_API__PORT` | `8000` | API server listen port |
-| `VULN_AI_API__CORS_ORIGINS` | `["http://localhost:3000", ...]` | JSON list of allowed CORS origins |
-| `VULN_AI_AI__ENABLED` | `true` | Toggle AI analysis pipeline globally |
-| `VULN_AI_DATABASE__URL` | `sqlite+aiosqlite:///./vuln_ai.db` | SQLAlchemy database URL |
-
----
-
-## 7. Running Tests
-
-Execute the API and Core test suite:
-
-```bash
-# Run all tests
-pytest
-
-# Run tests with code coverage
-pytest --cov=src/vuln_ai --cov-report=term-missing
-
-# Lint & Format checks
-ruff check .
-ruff format --check .
-```
+   # Frontend:
+   npm run typecheck && npm run lint && npm run format:check && npm test && npm run build
+   ```

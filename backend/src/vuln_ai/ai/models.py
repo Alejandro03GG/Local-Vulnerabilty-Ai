@@ -47,7 +47,7 @@ class AnalysisContext(BaseModel):
     )
 
     # Vulnerability details
-    cve_id: str = Field(description="CVE identifier")
+    cve_id: str = Field(default="", description="CVE identifier or canonical ID")
     source_name: str = Field(default="CISA KEV", description="Catalog source")
     vendor_project: str = Field(description="Target vendor or open-source project")
     product: str = Field(description="Target product name")
@@ -81,7 +81,7 @@ class AnalysisContext(BaseModel):
             version_constraint=comp.version_constraint,
             ecosystem=comp.ecosystem,
             source_file=comp.source_file,
-            cve_id=vuln.cve_id,
+            cve_id=vuln.cve_id or vuln.canonical_id or "UNKNOWN-VULN",
             source_name=vuln.source_name,
             vendor_project=vuln.vendor_project,
             product=vuln.product,

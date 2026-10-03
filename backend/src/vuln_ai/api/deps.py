@@ -24,19 +24,31 @@ from vuln_ai.db.database import get_session
 from vuln_ai.db.repositories import (
     AIAnalysisRepository,
     ComponentRepository,
+    ContainerRepository,
     DecisionRepository,
     MatchRepository,
+    PolicyRepository,
     ProjectRepository,
     RiskAssessmentRepository,
     ScanRepository,
     SourceRepository,
+    SuppressionRepository,
     VulnerabilityRepository,
 )
 from vuln_ai.matching.matcher import VulnerabilityMatcher
+from vuln_ai.policy.service import PolicyService
 from vuln_ai.risk.engine import DeterministicRiskEngine
-from vuln_ai.scanners.python_scanner import PythonScanner
-from vuln_ai.scanners.registry import ScannerRegistry
+from vuln_ai.scanners import (
+    CargoLockScanner,
+    NpmLockScanner,
+    PnpmLockScanner,
+    PoetryLockScanner,
+    PythonScanner,
+    ScannerRegistry,
+)
 from vuln_ai.sources.cisa_kev import CISAKEVSource
+from vuln_ai.sources.nvd import NVDSource
+from vuln_ai.sources.osv import OSVSource
 from vuln_ai.sources.registry import SourceRegistry
 
 
@@ -96,10 +108,20 @@ def get_risk_assessments_repo(
     return RiskAssessmentRepository(session)
 
 
+def get_container_repo(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> ContainerRepository:
+    return ContainerRepository(session)
+
+
 # Registries & Engines
 def get_scanner_registry() -> ScannerRegistry:
     registry = ScannerRegistry()
     registry.register(PythonScanner())
+    registry.register(PoetryLockScanner())
+    registry.register(NpmLockScanner())
+    registry.register(PnpmLockScanner())
+    registry.register(CargoLockScanner())
     return registry
 
 
@@ -108,6 +130,8 @@ def get_source_registry(
 ) -> SourceRegistry:
     registry = SourceRegistry()
     registry.register(CISAKEVSource(settings=settings.kev))
+    registry.register(OSVSource(settings=settings.osv))
+    registry.register(NVDSource(settings=settings.nvd))
     return registry
 
 
@@ -205,3 +229,17 @@ def get_scan_service(
         risk_engine=risk_engine,
         match_service=match_service,
     )
+
+
+def get_policy_repo(session: Annotated[AsyncSession, Depends(get_db)]) -> PolicyRepository:
+    return PolicyRepository(session)
+
+
+def get_suppression_repo(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> SuppressionRepository:
+    return SuppressionRepository(session)
+
+
+def get_policy_service(session: Annotated[AsyncSession, Depends(get_db)]) -> PolicyService:
+    return PolicyService(session)

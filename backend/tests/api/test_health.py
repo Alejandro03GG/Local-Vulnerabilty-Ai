@@ -46,3 +46,35 @@ async def test_readiness_check_db_failure(api_client: AsyncClient):
         assert "Database unreachable" in data["error"]
     finally:
         app.dependency_overrides.pop(get_db, None)
+
+
+async def test_readiness_check_with_ai_diagnostics(api_client: AsyncClient):
+    """GET /health/ready returns diagnostic AI status without compromising readiness."""
+    from vuln_ai.ai.base import AIProvider
+    from vuln_ai.ai.registry import AIRegistry
+    from vuln_ai.api.deps import get_ai_registry
+
+    class MockHealthyAI(AIProvider):
+        @property
+        def name(self) -> str:
+            return "mock"
+
+        async def is_available(self) -> bool:
+            return True
+
+        async def analyze(self, *args, **kwargs):
+            raise NotImplementedError
+
+    reg = AIRegistry()
+    reg.register_ai_provider(MockHealthyAI())
+
+    app.dependency_overrides[get_ai_registry] = lambda: reg
+    try:
+        response = await api_client.get("/health/ready")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "ready"
+        assert data["database"] == "connected"
+        assert data["ai"] == "available"
+    finally:
+        app.dependency_overrides.pop(get_ai_registry, None)

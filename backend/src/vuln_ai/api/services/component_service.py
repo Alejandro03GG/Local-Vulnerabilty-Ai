@@ -22,6 +22,15 @@ class ComponentService:
 
     @staticmethod
     def to_response(db_comp: ProjectComponentDB) -> ComponentResponse:
+        path_list: list[str] = []
+        if getattr(db_comp, "dependency_path", None):
+            try:
+                import json
+
+                path_list = json.loads(db_comp.dependency_path)
+            except Exception:
+                path_list = []
+
         return ComponentResponse(
             id=db_comp.id,
             project_id=db_comp.project_id,
@@ -32,6 +41,13 @@ class ComponentService:
             source_file=db_comp.source_file,
             ecosystem=db_comp.ecosystem,
             component_type=db_comp.component_type,
+            is_direct=getattr(db_comp, "is_direct", True),
+            dependency_type=getattr(db_comp, "dependency_type", "direct"),
+            scope=getattr(db_comp, "scope", "runtime"),
+            manifest_source=getattr(db_comp, "manifest_source", None),
+            lockfile_source=getattr(db_comp, "lockfile_source", None),
+            parent_name=getattr(db_comp, "parent_name", None),
+            dependency_path=path_list,
             detected_at=db_comp.detected_at,
         )
 

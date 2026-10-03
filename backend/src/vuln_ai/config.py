@@ -35,6 +35,50 @@ class KEVSourceSettings(BaseSettings):
     max_retries: int = Field(default=3, description="Maximum retry attempts")
 
 
+class OSVSourceSettings(BaseSettings):
+    """OSV (Open Source Vulnerabilities) source configuration."""
+
+    base_url: str = Field(
+        default="https://api.osv.dev/v1",
+        description="OSV API base URL",
+    )
+    timeout_seconds: float = Field(
+        default=30.0,
+        description="HTTP request timeout for OSV API",
+    )
+    user_agent: str = Field(
+        default="local-vulnerability-ai/0.1.0",
+        description="User-Agent header for OSV API requests",
+    )
+    max_retries: int = Field(default=3, description="Maximum retry attempts")
+
+
+class NVDSourceSettings(BaseSettings):
+    """NVD (National Vulnerability Database) source configuration."""
+
+    base_url: str = Field(
+        default="https://services.nvd.nist.gov/rest/json/cves/2.0",
+        description="NVD CVE API 2.0 base URL",
+    )
+    api_key: str | None = Field(
+        default=None,
+        description="Optional NVD API key for higher rate limits",
+    )
+    timeout_seconds: float = Field(
+        default=30.0,
+        description="HTTP request timeout for NVD API",
+    )
+    user_agent: str = Field(
+        default="local-vulnerability-ai/0.1.0",
+        description="User-Agent header for NVD API requests",
+    )
+    results_per_page: int = Field(
+        default=100,
+        description="Default page size for pagination",
+    )
+    max_retries: int = Field(default=3, description="Maximum retry attempts")
+
+
 class ScannerSettings(BaseSettings):
     """Scanner configuration."""
 
@@ -109,6 +153,8 @@ class Settings(BaseSettings):
 
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     kev: KEVSourceSettings = Field(default_factory=KEVSourceSettings)
+    osv: OSVSourceSettings = Field(default_factory=OSVSourceSettings)
+    nvd: NVDSourceSettings = Field(default_factory=NVDSourceSettings)
     scanner: ScannerSettings = Field(default_factory=ScannerSettings)
     ai: AISettings = Field(default_factory=AISettings)
     api: APISettings = Field(default_factory=APISettings)

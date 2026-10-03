@@ -1,6 +1,6 @@
-# Frontend Architecture & Design System — Local Vulnerability AI (Phase 4)
+# Frontend Architecture & Implementation — Local Vulnerability AI (Etapa 10)
 
-The frontend layer of **Local Vulnerability AI** is an operational security console built with **React 18**, **TypeScript**, **Vite**, **Tailwind CSS**, and **TanStack Query**. It directly consumes the versioned REST API (`/api/v1`) from Phase 3 without intermediate mock layers, simulated states, or duplicate business logic.
+The frontend layer of **Local Vulnerability AI** is an operational security console built with **React 18**, **TypeScript**, **Vite**, **Tailwind CSS**, and **TanStack Query**. It directly consumes the versioned REST API (`/api/v1`) without intermediate mock layers, simulated states, or duplicate security logic.
 
 ---
 
@@ -9,189 +9,158 @@ The frontend layer of **Local Vulnerability AI** is an operational security cons
 The interface follows a **"Modern Security Operations Interface"** aesthetic:
 
 * **Dark-First Technical Palette**:
-  * Background: Deep slate/zinc `#080c14` (`--background`)
-  * Surfaces: Structured elevations `#0d1424` (`--surface`), `#141f36` (`--surface-elevated`)
-  * Borders: Disciplined `#1f293d` (`--border`) with subtle focus rings
-  * Accents: High-precision cyan `#06b6d4` (`--primary`)
+  * Background: `#090d16` (`bg-soc-bg`)
+  * Surfaces: Structured elevations `#111827` (`bg-soc-surface`), `#1a2234` (`bg-soc-elevated`)
+  * Borders: Disciplined `#1f293d` (`border-soc-border`) with subtle focus rings
+  * Accents: High-precision blue `#2563eb` and cyan accents
 * **Information Density & Hierarchy ("No Card Soup")**:
-  * Prioritizes structured data tables, metric strips, and split inspection drawers over generic card clusters.
-  * Monospace typography reserved for technical values: CVE IDs, package names, versions, rule IDs, hashes, and probabilities.
+  * Prioritizes structured data tables (`DataTable`), metric strips (`Metric`), and intelligence split panels.
+  * Monospace typography reserved for technical values: CVE IDs, package names, versions, rule IDs, and probabilities.
 * **Conservative Semantic Security States**:
   * Enforces the backend domain model strictly:
-    * `DETECTED`: Informational catalog match (Sky)
-    * `LIKELY_AFFECTED`: Warning / High attention (Rose/Red)
-    * `LIKELY_NOT_AFFECTED`: Safe / Positive (Emerald)
-    * `REQUIRES_REVIEW`: Attention / Analyst needed (Amber)
+    * `DETECTED`: Informational catalog match (Purple)
+    * `LIKELY_AFFECTED`: Warning / High attention (Rose)
+    * `LIKELY_NOT_AFFECTED`: Outside affected range (Emerald)
+    * `REQUIRES_REVIEW`: Multi-source conflict / Human attention needed (Amber)
     * `UNKNOWN`: Neutral / Unresolved (Slate)
   * **Critical Principle**: The status `VULNERABLE` does not exist and is never displayed. A catalog match is an indicator, not a confirmed compromise.
+* **Multi-Source Conflict & Audit Transparency**:
+  * Discrepancies between sources (OSV, NVD, CISA KEV) are surfaced in `ConflictPanel`.
+  * Deterministic rule-based evaluation reasons are chronologically audited in `AuditTrace`.
+  * AI analysis (Ollama) and SystemOne fast-inference probabilities are explicitly designated as contextual decision support.
 
 ---
 
 ## 2. Directory Structure
 
 ```text
-src/
-├── app/
-│   ├── app.tsx                 # Root application component
-│   ├── providers.tsx           # QueryClientProvider, ToastProvider, BrowserRouter
-│   └── router.tsx              # React Router v6 nested routes and 404 handler
-│
-├── components/
-│   ├── ui/                     # Primitives (button, badge, input, table, dialog, tabs, skeleton, toast)
-│   ├── layout/                 # AppShell, Topbar (live health probe), Sidebar (collapsible + mobile drawer)
-│   ├── navigation/             # CommandMenu (⌘K palette)
-│   ├── feedback/               # EmptyState, ErrorState with retry actions
-│   └── security/               # SecurityStatusBadge, RiskLevelBadge, RuleTraceView, AIFallbackAlert
-│
-├── features/                   # Feature domain modules
-│
-├── pages/
-│   ├── dashboard/              # Metrics, recent scans, catalog feed status
-│   ├── projects/               # Workspace list, registration modal, project detail (tabs)
-│   ├── scans/                  # Historical scan executions, findings table, duration
-│   ├── components/             # Local software dependencies, manifest source, version certainty
-│   ├── vulnerabilities/        # CISA KEV catalog search with filters (CVE, product, vendor)
-│   ├── sources/                # Feed management with live synchronization triggers
-│   ├── matches/                # 4-stage pipeline audit (Match → AI → SystemOne → Risk Engine)
-│   └── settings/               # System configuration, AI inference parameters, air-gap guarantees
-│
-├── lib/
-│   ├── api/                    # Centralized typed HTTP client & resource modules
-│   │   ├── client.ts           # Fetch client with X-Request-ID, base URL, error parsing
-│   │   ├── health.ts           # /health and /health/ready probes
-│   │   ├── projects.ts         # /api/v1/projects CRUD
-│   │   ├── scans.ts            # /api/v1/scans and scan triggers
-│   │   ├── components.ts       # /api/v1/projects/{id}/components
-│   │   ├── vulnerabilities.ts  # /api/v1/vulnerabilities catalog query
-│   │   ├── sources.ts          # /api/v1/sources and sync trigger
-│   │   └── matches.ts          # /api/v1/matches and AI re-analysis
+frontend/
+├── public/
+├── src/
+│   ├── app/
+│   │   ├── App.tsx                 # Root application component
+│   │   ├── providers.tsx           # QueryClientProvider, ToastProvider
+│   │   └── router.tsx              # React Router v6 routes
 │   │
-│   ├── query/
-│   │   └── query-keys.ts       # Centralized query keys factory
+│   ├── components/
+│   │   ├── badges/                 # Semantic status and risk indicators
+│   │   │   ├── ApplicabilityBadge.tsx
+│   │   │   ├── RiskBadge.tsx
+│   │   │   ├── ScanStatusBadge.tsx
+│   │   │   ├── SourceStatusBadge.tsx
+│   │   │   └── ReviewBadge.tsx
+│   │   ├── intelligence/           # Core Security Operations components
+│   │   │   ├── AIAnalysisCard.tsx
+│   │   │   ├── AuditTrace.tsx
+│   │   │   ├── ConflictPanel.tsx
+│   │   │   └── SystemOneCard.tsx
+│   │   ├── layout/                 # Shell, Navigation, Topbar & Command Menu
+│   │   │   ├── AppShell.tsx
+│   │   │   ├── CommandMenu.tsx     # ⌘K / Ctrl+K Palette
+│   │   │   ├── PageHeader.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   └── Topbar.tsx
+│   │   └── ui/                     # UI Primitives
+│   │       ├── DataTable.tsx       # Dense, accessible, sortable data table
+│   │       ├── EmptyState.tsx
+│   │       ├── ErrorState.tsx      # With Request ID & Retry action
+│   │       ├── LoadingState.tsx    # Skeletons and Spinners
+│   │       ├── Metric.tsx
+│   │       └── Toast.tsx
 │   │
-│   └── utils.ts                # cn() class merger and date/duration formatters
-│
-├── styles/
-│   └── globals.css             # Tailwind base layers, security variables, custom scrollbars
-│
-└── types/                      # Pydantic-aligned TypeScript schemas
-    ├── api.ts                  # ApiError, ErrorResponse, PaginatedResponse
-    ├── project.ts              # Project, ProjectCreate, ProjectUpdate
-    ├── scan.ts                 # Scan, ScanSummary, ScanCreateRequest
-    ├── component.ts            # Component
-    ├── vulnerability.ts        # Vulnerability, VulnerabilityFilters
-    ├── source.ts               # Source, SourceSyncResult
-    ├── match.ts                # Match
-    ├── ai.ts                   # AIAnalysis, DecisionResult
-    └── risk.ts                 # RiskAssessment, SecurityStatus, RiskLevel
+│   ├── context/
+│   │   └── ToastContext.ts
+│   ├── hooks/
+│   │   └── useToast.ts
+│   ├── lib/
+│   │   └── utils.ts                # cn, formatDate, formatDuration, formatPercent
+│   │
+│   ├── pages/
+│   │   ├── ComponentsPage.tsx
+│   │   ├── DashboardPage.tsx
+│   │   ├── MatchDetailPage.tsx     # Flagship deep intelligence screen
+│   │   ├── MatchesPage.tsx
+│   │   ├── ProjectDetailPage.tsx
+│   │   ├── ProjectsPage.tsx
+│   │   ├── ScanDetailPage.tsx
+│   │   ├── ScansPage.tsx           # Auto-polling during active execution
+│   │   ├── SettingsPage.tsx
+│   │   ├── SourcesPage.tsx         # Source sync operations
+│   │   ├── VulnerabilitiesPage.tsx
+│   │   └── VulnerabilityDetailPage.tsx
+│   │
+│   ├── services/
+│   │   └── api/
+│   │       ├── client.ts           # Typed fetch client with X-Request-ID
+│   │       ├── components.ts
+│   │       ├── health.ts
+│   │       ├── matches.ts
+│   │       ├── projects.ts
+│   │       ├── scans.ts
+│   │       ├── sources.ts
+│   │       └── vulnerabilities.ts
+│   │
+│   ├── styles/
+│   │   └── globals.css
+│   ├── test/                       # Unit and integration test suite
+│   │   ├── apiClient.test.ts
+│   │   ├── badges.test.tsx
+│   │   ├── conflictAndAudit.test.tsx
+│   │   ├── criticalConflict.test.tsx # Critical non-VULNERABLE check
+│   │   ├── dataTableAndMetric.test.tsx
+│   │   ├── details.test.tsx
+│   │   ├── fixtures.ts
+│   │   ├── routing.test.tsx
+│   │   ├── setup.ts
+│   │   └── uiStates.test.tsx
+│   │
+│   ├── types/
+│   │   └── index.ts                # Domain models matching FastAPI schemas
+│   ├── main.tsx
+│   └── vite-env.d.ts
+├── .env.example
+├── index.html
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── vitest.config.ts
+├── tailwind.config.js
+├── postcss.config.js
+├── eslint.config.js
+└── prettier.config.js
 ```
 
 ---
 
-## 3. The 4-Layer Inspection Pipeline
+## 3. Operational Routes
 
-The platform is designed around strict separation of analytical stages:
-
-```text
-┌────────────────────────────────────────────────────────┐
-│ 1. Deterministic Match Layer                           │
-│    - Package name equality (e.g. Django -> Django)     │
-│    - Match confidence score (0.0 - 1.0)                │
-│    - Explicit evidence statements                      │
-└────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│ 2. Contextual AI Narrative (Ollama LLM)                │
-│    - Model & Provider attribution (e.g. llama3.2)      │
-│    - Contextual explanation & extracted evidence       │
-│    - Honest fallback disclosure when offline           │
-└────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│ 3. SystemOne Probabilistic Decision                    │
-│    - Applicability probability bar (0 - 100%)          │
-│    - Urgency prioritization score                      │
-│    - Structured model responses                        │
-└────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│ 4. Deterministic Risk Assessment & Rule Trace          │
-│    - Conservative status (REQUIRES_REVIEW, etc.)       │
-│    - Auditable rule IDs (MATCH_COMPONENT_ONLY, etc.)   │
-│    - Concrete remediation instructions                 │
-└────────────────────────────────────────────────────────┘
-```
+| Route | View | Description |
+| :--- | :--- | :--- |
+| `/` | `DashboardPage` | Real-time security posture, telemetry metrics, risk breakdown, recent scans |
+| `/projects` | `ProjectsPage` | Target codebases, project registration modal, launch scan action |
+| `/projects/:projectId` | `ProjectDetailPage` | Project meta, execution history, detected dependencies, scan trigger |
+| `/scans` | `ScansPage` | Scan execution history with active polling (`pending` / `running`) |
+| `/scans/:scanId` | `ScanDetailPage` | Scan duration, components, findings breakdown, failure diagnostics |
+| `/components` | `ComponentsPage` | Global software component inventory across all projects |
+| `/vulnerabilities` | `VulnerabilitiesPage` | Synchronized vulnerability advisories catalog |
+| `/vulnerabilities/:vulnerabilityId` | `VulnerabilityDetailPage` | Advisory metadata, CWE classifications, and CISA KEV directives |
+| `/matches` | `MatchesPage` | Correlated matches with strict semantic statuses and filters |
+| `/matches/:matchId` | `MatchDetailPage` | Flagship screen: Evidence, Conflicts, AI, SystemOne, Risk & AuditTrace |
+| `/sources` | `SourcesPage` | Intelligence sources status (OSV, NVD, CISA KEV) with sync action |
+| `/settings` | `SettingsPage` | Environment diagnostics, API Gateway connectivity, reduced motion |
 
 ---
 
-## 4. API Endpoints Consumed
+## 4. End-to-End Setup & Quality Verification
 
-All endpoints match the FastAPI backend from Phase 3 (`docs/api.md`):
+Follow this 7-step workflow to install, run, and verify the full application:
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Liveness probe |
-| `GET` | `/health/ready` | Readiness probe (database connectivity) |
-| `GET` | `/api/v1/projects` | Paginated project list |
-| `POST` | `/api/v1/projects` | Register new workspace |
-| `GET` | `/api/v1/projects/{id}` | Workspace detail |
-| `DELETE` | `/api/v1/projects/{id}` | Delete project |
-| `POST` | `/api/v1/projects/{id}/scans` | Initiate scan (`run_ai: true`) |
-| `GET` | `/api/v1/scans` | List historical scans |
-| `GET` | `/api/v1/scans/{id}` | Get scan detail and matches |
-| `GET` | `/api/v1/projects/{id}/components` | List detected dependencies |
-| `GET` | `/api/v1/components/{id}` | Component detail |
-| `GET` | `/api/v1/vulnerabilities` | Query catalog with `cve`, `vendor`, `product` |
-| `GET` | `/api/v1/vulnerabilities/{id}` | Vulnerability catalog detail |
-| `GET` | `/api/v1/sources` | Catalog sources list |
-| `POST` | `/api/v1/sources/{id}/sync` | Trigger CISA KEV remote feed sync |
-| `GET` | `/api/v1/matches/{id}` | Full match details |
-| `GET` | `/api/v1/matches/{id}/analysis` | AI contextual narrative |
-| `GET` | `/api/v1/matches/{id}/decision` | SystemOne decision probabilities |
-| `POST` | `/api/v1/matches/{id}/reanalyze` | Re-evaluate match with AI & Risk Engine |
-| `GET` | `/api/v1/matches/{id}/risk` | Deterministic Risk Engine evaluation |
-
----
-
-## 5. Development & Testing Workflow
-
-### Configuration
-
-Create a `.env` file or export environment variables:
-
-```bash
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-*(If unset in development, Vite proxies `/api` and `/health` requests directly to `http://127.0.0.1:8000`)*.
-
-### Available Scripts
-
-```bash
-# Run local dev server (port 5173)
-npm run dev
-
-# Compile TypeScript and create production bundle
-npm run build
-
-# Run TypeScript static type check
-npm run typecheck
-
-# Run ESLint validation
-npm run lint
-
-# Format codebase with Prettier
-npm run format
-
-# Verify code formatting
-npm run format:check
-
-# Run Vitest test suite
-npm run test
-
-# Run Vitest with V8 code coverage
-npm run test:coverage
-```
+1. **Backend setup**: `cd backend && python3 -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"`
+2. **Database migration**: `alembic upgrade head`
+3. **Environment variables**: `cp backend/.env.example backend/.env` and `cp frontend/.env.example frontend/.env`
+4. **Start API**: `uvicorn vuln_ai.api.main:app --port 8000`
+5. **Frontend setup**: `cd frontend && npm install`
+6. **Start frontend**: `npm run dev` (Runs on `http://localhost:5173`)
+7. **Run tests**:
+   * Frontend: `npm run typecheck && npm run lint && npm run format:check && npm test && npm run build`
+   * Backend: `pytest --cov=src --cov-fail-under=95 && ruff check src tests && ruff format --check src tests`
