@@ -90,9 +90,14 @@ class SourceService:
         duration = sync_result.duration_seconds or (time.monotonic() - start_time)
 
         if sync_result.success:
+            # CISA KEV provides a complete feed snapshot; OSV/NVD syncs are partial.
+            prune_missing = (
+                db_source.source_type == "cisa_kev" and bool(source_impl.records)
+            )
             count = await self._vuln_repo.upsert_vulnerabilities(
                 source_id=db_source.id,
                 records=source_impl.records,
+                prune_missing=prune_missing,
             )
             await self._source_repo.update_sync_status(
                 source_id=db_source.id,

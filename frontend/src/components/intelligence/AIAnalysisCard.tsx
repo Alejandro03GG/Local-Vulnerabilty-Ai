@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bot, Clock, Cpu, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { cn, formatDuration } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { AIAnalysis } from '@/types';
 
 interface AIAnalysisCardProps {
@@ -9,6 +10,8 @@ interface AIAnalysisCardProps {
 }
 
 export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ analysis, className }) => {
+  const { t } = useI18n();
+
   if (!analysis) {
     return (
       <div
@@ -19,10 +22,10 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ analysis, classN
       >
         <Bot className="w-8 h-8 text-soc-muted mx-auto mb-2" />
         <p className="text-sm font-medium text-soc-secondary">
-          No AI contextual analysis generated for this match.
+          {t('intelligence.aiAnalysis.emptyTitle')}
         </p>
         <span className="text-xs text-soc-muted block mt-1">
-          Scans can execute with or without local AI assistance.
+          {t('intelligence.aiAnalysis.emptyHint')}
         </span>
       </div>
     );
@@ -40,10 +43,12 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ analysis, classN
       <div className="p-4 bg-soc-elevated/80 border-b border-soc-border flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Bot className="w-5 h-5 text-blue-400" aria-hidden="true" />
-          <h3 className="text-sm font-semibold text-soc-primary">AI Contextual Analysis</h3>
+          <h3 className="text-sm font-semibold text-soc-primary">
+            {t('intelligence.aiAnalysis.title')}
+          </h3>
         </div>
         <span className="text-[11px] font-mono text-soc-secondary bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2.5 py-0.5 rounded">
-          Contextual analysis — does not determine final applicability
+          {t('intelligence.aiAnalysis.boundary')}
         </span>
       </div>
 
@@ -52,7 +57,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ analysis, classN
         <div>
           <h4 className="text-xs font-mono uppercase text-soc-secondary tracking-wider mb-1.5 flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5" />
-            Executive Summary
+            {t('intelligence.aiAnalysis.executiveSummary')}
           </h4>
           <p className="text-sm text-soc-primary/90 leading-relaxed font-sans bg-soc-elevated/40 p-3.5 rounded border border-soc-border">
             {analysis.explanation}
@@ -63,7 +68,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ analysis, classN
         {analysis.contextual_findings && analysis.contextual_findings.length > 0 && (
           <div>
             <h4 className="text-xs font-mono uppercase text-soc-secondary tracking-wider mb-2">
-              Contextual Observations
+              {t('intelligence.aiAnalysis.observations')}
             </h4>
             <ul className="space-y-1.5 text-xs text-soc-secondary">
               {analysis.contextual_findings.map((finding, idx) => (
@@ -83,7 +88,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ analysis, classN
         {analysis.evidence && analysis.evidence.length > 0 && (
           <div>
             <h4 className="text-xs font-mono uppercase text-soc-secondary tracking-wider mb-2">
-              Evidence Reviewed by Model
+              {t('intelligence.aiAnalysis.evidence')}
             </h4>
             <div className="flex flex-wrap gap-2">
               {analysis.evidence.map((item, idx) => (
@@ -102,9 +107,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ analysis, classN
         {analysis.requires_human_review && (
           <div className="flex items-center gap-2 p-2.5 rounded bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
             <ShieldAlert className="w-4 h-4 shrink-0" />
-            <span>
-              AI model flagged uncertainty and recommended human security analyst verification.
-            </span>
+            <span>{t('intelligence.aiAnalysis.humanReview')}</span>
           </div>
         )}
 
@@ -118,11 +121,15 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({ analysis, classN
           </div>
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5" />
-            <span>Latency: {formatDuration(analysis.duration_seconds)}</span>
+            <span>
+              {t('intelligence.aiAnalysis.latency', {
+                duration: formatDuration(analysis.duration_seconds),
+              })}
+            </span>
           </div>
           {analysis.tokens_used > 0 && (
             <div>
-              <span>Tokens: {analysis.tokens_used}</span>
+              <span>{t('intelligence.aiAnalysis.tokens', { count: analysis.tokens_used })}</span>
             </div>
           )}
         </div>

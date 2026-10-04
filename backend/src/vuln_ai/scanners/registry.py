@@ -8,6 +8,7 @@ from pathlib import Path
 from vuln_ai.core.graph import DependencyGraph, DependencyNode, DependencyType
 from vuln_ai.core.models import DetectedComponent, normalize_component_name
 from vuln_ai.scanners.base import ProjectScanner
+from vuln_ai.scanners.discovery import discover_project_roots
 
 logger = logging.getLogger(__name__)
 
@@ -27,21 +28,51 @@ class ScannerRegistry:
         return [s for s in self._scanners if s.can_scan(project_path)]
 
     def scan_graph(self, project_path: Path) -> DependencyGraph:
-        """Run all applicable scanners and merge results into a unified DependencyGraph.
+        """Run scanners across discovered project roots and merge graphs.
 
-        Enforces the precedence rule: LOCKFILE > MANIFEST.
-        - If an exact resolved version exists from a lockfile, it takes precedence.
-        - Manifest packages mark matching lockfile packages as direct dependencies.
-        - Unresolved manifest-only packages are preserved.
+        Supports monorepos via safe recursive discovery. Within the merged
+        result, lockfile-resolved versions take precedence over manifests.
         """
         combined_graph = DependencyGraph()
-        applicable = self.get_scanners_for(project_path)
-
         lockfile_nodes: dict[str, DependencyNode] = {}
         manifest_nodes: dict[str, list[DependencyNode]] = {}
 
+        roots = discover_project_roots(project_path)
+        logger.debug("Discovered %d project root(s) under %s", len(roots), project_path)
+        for root in roots:
+            self._collect_from_root(root, combined_graph, lockfile_nodes, manifest_nodes)
+
+        for node in lockfile_nodes.values():
+            norm = normalize_component_name(node.name)
+            if norm in manifest_nodes:
+                m_node = manifest_nodes[norm][0]
+                node.is_direct = True
+                node.dependency_type = DependencyType.DIRECT
+                node.manifest_source = m_node.manifest_source or m_node.source_file
+                if not node.version_constraint and m_node.version_constraint:
+                    node.version_constraint = m_node.version_constraint
+            combined_graph.add_node(node)
+
+        for norm, m_nodes in manifest_nodes.items():
+            has_lockfile_match = any(
+                normalize_component_name(ln.name) == norm for ln in lockfile_nodes.values()
+            )
+            if not has_lockfile_match:
+                for m_node in m_nodes:
+                    combined_graph.add_node(m_node)
+
+        return combined_graph
+
+    def _collect_from_root(
+        self,
+        project_path: Path,
+        combined_graph: DependencyGraph,
+        lockfile_nodes: dict[str, DependencyNode],
+        manifest_nodes: dict[str, list[DependencyNode]],
+    ) -> None:
+        """Run applicable scanners for a single project root and accumulate nodes."""
+        applicable = self.get_scanners_for(project_path)
         for scanner in applicable:
-            # 1. Run graph-aware scan if supported
             if hasattr(scanner, "scan_graph"):
                 graph = scanner.scan_graph(project_path)
                 combined_graph.edges.extend(graph.edges)
@@ -54,13 +85,11 @@ class ScannerRegistry:
 
                 for node in graph.nodes.values():
                     if node.lockfile_source:
-                        # Lockfile-originated node
                         lockfile_nodes[node.node_id] = node
                     else:
                         norm = normalize_component_name(node.name)
                         manifest_nodes.setdefault(norm, []).append(node)
             else:
-                # 2. Legacy scanner returning list[DetectedComponent]
                 components = scanner.scan(project_path)
                 for comp in components:
                     node = DependencyNode.create(
@@ -74,31 +103,6 @@ class ScannerRegistry:
                     )
                     norm = normalize_component_name(comp.name)
                     manifest_nodes.setdefault(norm, []).append(node)
-
-        # Apply precedence: Lockfile nodes form the core
-        for node in lockfile_nodes.values():
-            norm = normalize_component_name(node.name)
-            # If this package was declared in a manifest, ensure it's marked direct
-            if norm in manifest_nodes:
-                m_node = manifest_nodes[norm][0]
-                node.is_direct = True
-                node.dependency_type = DependencyType.DIRECT
-                node.manifest_source = m_node.manifest_source or m_node.source_file
-                if not node.version_constraint and m_node.version_constraint:
-                    node.version_constraint = m_node.version_constraint
-
-            combined_graph.add_node(node)
-
-        # Add manifest-only nodes if not superseded by a lockfile node
-        for norm, m_nodes in manifest_nodes.items():
-            has_lockfile_match = any(
-                normalize_component_name(ln.name) == norm for ln in lockfile_nodes.values()
-            )
-            if not has_lockfile_match:
-                for m_node in m_nodes:
-                    combined_graph.add_node(m_node)
-
-        return combined_graph
 
     def scan_all(self, project_path: Path) -> list[DetectedComponent]:
         """Run all applicable scanners and return combined, resolved components."""

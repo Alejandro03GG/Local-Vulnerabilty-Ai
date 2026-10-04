@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { render } from './renderWithLanguage';
 import { ApplicabilityBadge } from '@/components/badges/ApplicabilityBadge';
 import { RiskBadge } from '@/components/badges/RiskBadge';
 import { ScanStatusBadge } from '@/components/badges/ScanStatusBadge';

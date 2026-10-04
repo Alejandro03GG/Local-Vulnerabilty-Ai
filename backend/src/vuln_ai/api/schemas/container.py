@@ -47,6 +47,10 @@ class ContainerImageResponse(BaseModel):
     created_at: datetime
     layer_count: int = 0
     layers: list[ContainerLayerResponse] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    dockerfile_ast: dict[str, Any] | None = Field(
+        default=None, description="Persisted Dockerfile AST when source_type=dockerfile"
+    )
 
 
 class ContainerComponentResponse(BaseModel):
@@ -69,6 +73,10 @@ class DockerfileScanRequest(BaseModel):
 
     content: str | None = Field(default=None, description="Raw Dockerfile content string")
     path: str | None = Field(default=None, description="Filesystem path to Dockerfile")
+    persist: bool = Field(
+        default=True,
+        description="Persist Dockerfile AST as a container image record (H9)",
+    )
 
 
 class DockerfileScanResponse(BaseModel):
@@ -80,3 +88,7 @@ class DockerfileScanResponse(BaseModel):
     package_installations: list[dict[str, Any]]
     copied_files: list[dict[str, Any]]
     dependency_manifests: list[str]
+    image_id: str | None = Field(
+        default=None, description="Persisted container image ID when persist=true"
+    )
+    scan_id: str | None = Field(default=None, description="Associated scan ID when persisted")

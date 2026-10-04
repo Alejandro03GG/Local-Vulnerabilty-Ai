@@ -136,3 +136,7 @@ vuln-ai image scan ./Dockerfile
 | `GET` | `/api/v1/images/{id}/vulnerabilities`| Get correlated vulnerability matches |
 | `GET` | `/api/v1/images/{id}/policy` | Evaluate policy thresholds and rules against image findings |
 | `GET` | `/api/v1/images/{id}/dependency-graph`| Topological tree of base image, OS, and app packages |
+
+## Dockerfile AST persistence (Stage 19.1)
+
+Static Dockerfile analysis may persist an image record with `source_type=dockerfile` and the AST under `metadata.dockerfile_ast` / API field `dockerfile_ast`. No Docker daemon or registry access is used.

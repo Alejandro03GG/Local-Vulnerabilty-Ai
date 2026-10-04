@@ -10,8 +10,10 @@ import {
   Play,
 } from 'lucide-react';
 import { policyApi, type Policy, type PolicyValidateResponse } from '@/services/api/policy';
+import { useI18n } from '@/i18n';
 
 export const PoliciesPage: React.FC = () => {
+  const { t } = useI18n();
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -112,7 +114,7 @@ policy:
     } catch (err: unknown) {
       setValidationResult({
         valid: false,
-        errors: [err instanceof Error ? err.message : 'Failed to validate policy syntax'],
+        errors: [err instanceof Error ? err.message : t('policies.modal.validateFailed')],
       });
     } finally {
       setValidating(false);
@@ -132,11 +134,9 @@ policy:
         <div>
           <h1 className="text-xl font-bold tracking-tight text-soc-primary flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-blue-400" />
-            Security Policies & Rule Engine
+            {t('policies.title')}
           </h1>
-          <p className="text-xs text-soc-secondary mt-1">
-            Declarative policies, security thresholds, and deterministic enforcement rules.
-          </p>
+          <p className="text-xs text-soc-secondary mt-1">{t('policies.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -144,14 +144,14 @@ policy:
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-soc-secondary hover:text-soc-primary bg-soc-surface border border-soc-border rounded-md hover:bg-soc-elevated transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('policies.refresh')}
           </button>
           <button
             onClick={() => setIsValidatorOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-md transition-colors"
           >
             <FileCode2 className="w-3.5 h-3.5" />
-            Validate YAML Policy
+            {t('policies.validateButton')}
           </button>
         </div>
       </div>
@@ -164,7 +164,7 @@ policy:
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-soc-muted" />
             <input
               type="text"
-              placeholder="Filter policies..."
+              placeholder={t('policies.filterPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 text-xs bg-soc-surface border border-soc-border rounded-md text-soc-primary focus:outline-none focus:border-blue-500"
@@ -195,16 +195,20 @@ policy:
                           : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
                       }`}
                     >
-                      {pol.enabled ? 'Enabled' : 'Disabled'}
+                      {pol.enabled ? t('policies.enabled') : t('policies.disabled')}
                     </span>
                   </div>
                   <p className="text-[11px] text-soc-secondary line-clamp-2 mt-1">
-                    {pol.description || 'No description provided'}
+                    {pol.description || t('policies.noDescription')}
                   </p>
                   <div className="flex items-center gap-3 mt-3 text-[10px] text-soc-muted font-mono">
-                    <span>Rules: {pol.rules?.length || 0}</span>
-                    <span>Fail on: {pol.thresholds?.fail_on?.join(', ') || 'None'}</span>
-                    <span>Default: {pol.default_action}</span>
+                    <span>{t('policies.rulesCount', { count: pol.rules?.length || 0 })}</span>
+                    <span>
+                      {t('policies.failOn', {
+                        levels: pol.thresholds?.fail_on?.join(', ') || t('policies.none'),
+                      })}
+                    </span>
+                    <span>{t('policies.defaultAction', { action: pol.default_action })}</span>
                   </div>
                 </div>
               );
@@ -228,7 +232,7 @@ policy:
                   <p className="text-xs text-soc-secondary mt-1">{selectedPolicy.description}</p>
                 </div>
                 <div className="text-right font-mono text-[11px] text-soc-muted">
-                  ID:{' '}
+                  {t('policies.idLabel')}{' '}
                   <span className="text-soc-secondary">{selectedPolicy.id.slice(0, 12)}...</span>
                 </div>
               </div>
@@ -237,7 +241,7 @@ policy:
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-soc-elevated/40 border border-soc-border rounded-md p-3">
                   <div className="text-[10px] text-soc-muted uppercase tracking-wider font-semibold">
-                    Global Fail Severities
+                    {t('policies.globalFailSeverities')}
                   </div>
                   <div className="text-xs font-mono font-medium text-soc-primary mt-1">
                     {selectedPolicy.thresholds?.fail_on?.length > 0 ? (
@@ -252,29 +256,29 @@ policy:
                         ))}
                       </div>
                     ) : (
-                      'None'
+                      t('policies.none')
                     )}
                   </div>
                 </div>
 
                 <div className="bg-soc-elevated/40 border border-soc-border rounded-md p-3">
                   <div className="text-[10px] text-soc-muted uppercase tracking-wider font-semibold">
-                    Fail on Human Review
+                    {t('policies.failOnReview')}
                   </div>
                   <div className="text-xs font-mono font-medium text-soc-primary mt-1">
                     {selectedPolicy.thresholds?.fail_on_review ? (
                       <span className="text-amber-400 flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5" /> Enforced
+                        <AlertTriangle className="w-3.5 h-3.5" /> {t('policies.enforced')}
                       </span>
                     ) : (
-                      <span className="text-soc-secondary">Disabled</span>
+                      <span className="text-soc-secondary">{t('policies.disabled')}</span>
                     )}
                   </div>
                 </div>
 
                 <div className="bg-soc-elevated/40 border border-soc-border rounded-md p-3">
                   <div className="text-[10px] text-soc-muted uppercase tracking-wider font-semibold">
-                    Default Fallback Action
+                    {t('policies.defaultFallback')}
                   </div>
                   <div className="text-xs font-mono font-medium text-soc-primary mt-1">
                     <span className="text-blue-400">{selectedPolicy.default_action}</span>
@@ -285,9 +289,11 @@ policy:
               {/* Rules List */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-soc-secondary flex items-center justify-between">
-                  <span>Evaluated Rules ({selectedPolicy.rules?.length || 0})</span>
+                  <span>
+                    {t('policies.evaluatedRules', { count: selectedPolicy.rules?.length || 0 })}
+                  </span>
                   <span className="text-[10px] font-normal text-soc-muted">
-                    Order of Precedence: Top to Bottom
+                    {t('policies.precedence')}
                   </span>
                 </h3>
 
@@ -304,7 +310,7 @@ policy:
                               {rule.id}
                             </span>
                             <span className="text-[10px] text-soc-muted font-mono">
-                              Priority: {rule.priority ?? 100}
+                              {t('policies.priority', { value: rule.priority ?? 100 })}
                             </span>
                           </div>
                           <span
@@ -325,12 +331,12 @@ policy:
                           <p className="text-xs text-soc-primary">{rule.description}</p>
                         )}
                         <div className="bg-soc-bg border border-soc-border/60 rounded p-2 text-[11px] font-mono text-soc-secondary">
-                          <span className="text-soc-muted">When: </span>
+                          <span className="text-soc-muted">{t('policies.when')}</span>
                           {JSON.stringify(rule.when)}
                         </div>
                         {rule.reason && (
                           <div className="text-[11px] text-soc-muted italic">
-                            Reason: {rule.reason}
+                            {t('policies.reason', { reason: rule.reason })}
                           </div>
                         )}
                       </div>
@@ -338,14 +344,14 @@ policy:
                   </div>
                 ) : (
                   <div className="text-center py-8 text-xs text-soc-muted border border-dashed border-soc-border rounded-md">
-                    No rules configured in this policy. Default fallback action will apply.
+                    {t('policies.noRules')}
                   </div>
                 )}
               </div>
             </div>
           ) : (
             <div className="h-full flex items-center justify-center p-12 text-center text-xs text-soc-muted border border-dashed border-soc-border rounded-lg">
-              Select a policy to view its rules and security criteria.
+              {t('policies.selectPolicy')}
             </div>
           )}
         </div>
@@ -358,23 +364,19 @@ policy:
             <div className="px-5 py-4 border-b border-soc-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FileCode2 className="w-4 h-4 text-blue-400" />
-                <h3 className="text-sm font-bold text-soc-primary">
-                  Validate Security Policy (.vuln-ai.yaml)
-                </h3>
+                <h3 className="text-sm font-bold text-soc-primary">{t('policies.modal.title')}</h3>
               </div>
               <button
                 onClick={() => setIsValidatorOpen(false)}
                 className="text-soc-muted hover:text-soc-primary text-xs"
+                aria-label={t('policies.modal.closeIcon')}
               >
                 ✕
               </button>
             </div>
 
             <div className="p-5 overflow-y-auto space-y-4 flex-1">
-              <p className="text-xs text-soc-secondary">
-                Test and validate your declarative YAML policy against the strict validation schema
-                (1MB limit, no executable code, no duplicate IDs).
-              </p>
+              <p className="text-xs text-soc-secondary">{t('policies.modal.description')}</p>
 
               <div>
                 <textarea
@@ -396,11 +398,11 @@ policy:
                   <div className="font-bold flex items-center gap-1.5">
                     {validationResult.valid ? (
                       <>
-                        <CheckCircle2 className="w-4 h-4" /> Policy is valid and compliant!
+                        <CheckCircle2 className="w-4 h-4" /> {t('policies.modal.valid')}
                       </>
                     ) : (
                       <>
-                        <XCircle className="w-4 h-4" /> Validation Errors:
+                        <XCircle className="w-4 h-4" /> {t('policies.modal.errors')}
                       </>
                     )}
                   </div>
@@ -413,11 +415,14 @@ policy:
                   )}
                   {validationResult.policy && (
                     <div className="mt-2 text-[11px] text-soc-secondary">
-                      Parsed name:{' '}
+                      {t('policies.modal.parsedName')}{' '}
                       <span className="font-semibold text-soc-primary">
                         {validationResult.policy.name}
                       </span>{' '}
-                      | Rules: {validationResult.policy.rules?.length || 0}
+                      |{' '}
+                      {t('policies.modal.parsedRules', {
+                        count: validationResult.policy.rules?.length || 0,
+                      })}
                     </div>
                   )}
                 </div>
@@ -429,7 +434,7 @@ policy:
                 onClick={() => setIsValidatorOpen(false)}
                 className="px-3 py-1.5 text-xs text-soc-secondary hover:text-soc-primary bg-soc-surface border border-soc-border rounded-md"
               >
-                Close
+                {t('policies.modal.close')}
               </button>
               <button
                 onClick={handleValidate}
@@ -437,7 +442,7 @@ policy:
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-md disabled:opacity-50"
               >
                 <Play className="w-3.5 h-3.5" />
-                {validating ? 'Validating...' : 'Validate YAML'}
+                {validating ? t('policies.modal.validating') : t('policies.modal.validate')}
               </button>
             </div>
           </div>

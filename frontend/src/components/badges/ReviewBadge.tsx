@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserCheck, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 interface ReviewBadgeProps {
   requiresReview: boolean;
@@ -8,6 +9,8 @@ interface ReviewBadgeProps {
 }
 
 export const ReviewBadge: React.FC<ReviewBadgeProps> = ({ requiresReview, className }) => {
+  const { t } = useI18n();
+
   if (requiresReview) {
     return (
       <span
@@ -19,7 +22,7 @@ export const ReviewBadge: React.FC<ReviewBadgeProps> = ({ requiresReview, classN
         data-testid="badge-review-required"
       >
         <ShieldAlert className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
-        <span>HUMAN REVIEW REQUIRED</span>
+        <span>{t('badges.review.required')}</span>
       </span>
     );
   }
@@ -34,7 +37,7 @@ export const ReviewBadge: React.FC<ReviewBadgeProps> = ({ requiresReview, classN
       data-testid="badge-review-not-required"
     >
       <UserCheck className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
-      <span>NO REVIEW NEEDED</span>
+      <span>{t('badges.review.notRequired')}</span>
     </span>
   );
 };

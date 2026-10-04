@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 interface SourceStatusBadgeProps {
   isAvailable: boolean;
@@ -8,6 +9,8 @@ interface SourceStatusBadgeProps {
 }
 
 export const SourceStatusBadge: React.FC<SourceStatusBadgeProps> = ({ isAvailable, className }) => {
+  const { t } = useI18n();
+
   if (isAvailable) {
     return (
       <span
@@ -19,7 +22,7 @@ export const SourceStatusBadge: React.FC<SourceStatusBadgeProps> = ({ isAvailabl
         data-testid="badge-source-available"
       >
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-        <span>AVAILABLE</span>
+        <span>{t('badges.sourceStatus.available')}</span>
       </span>
     );
   }
@@ -34,7 +37,7 @@ export const SourceStatusBadge: React.FC<SourceStatusBadgeProps> = ({ isAvailabl
       data-testid="badge-source-unavailable"
     >
       <XCircle className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
-      <span>UNAVAILABLE</span>
+      <span>{t('badges.sourceStatus.unavailable')}</span>
     </span>
   );
 };

@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased] — Stage 19.1 Product Hardening
+
+### Fixed
+- Nullable `cve_id` end-to-end (API/frontend/export) for GHSA/RUSTSEC-only advisories (H17)
+- Incremental catalog upsert no longer destroys other ecosystems; KEV prune isolated (H1/H16/H2)
+- `fail_on` severity thresholds skip `likely_not_affected` findings (H13)
+- pnpm-lock.yaml multi-document YAML parsing (H21)
+- uv.lock scanner for exact Python versions (H18)
+- Safe recursive monorepo manifest discovery (H7)
+- Global `GET /api/v1/components` aligned with frontend (H3)
+- Risk engine no longer inflates LOW for not-applicable findings (H10)
+- apt-get `package=version` extraction in Dockerfile AST (H8)
+- Dockerfile AST persistence into Images API/UI (H9)
+- Policy docs include required suppression audit fields (H12)
+- Clearer policy threshold violation messages (H14)
+- CLI `-o` exports no longer dump full JSON to stdout (H15)
+- Unknown versions remain UNKNOWN / requires review (H19)
+
+### Added
+- Frontend branding assets and EN/ES i18n (ported from Stage 19 lab validation)
+
+
 All notable changes to the **Local Vulnerability AI** platform are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),

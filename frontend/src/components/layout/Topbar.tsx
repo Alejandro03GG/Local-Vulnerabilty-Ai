@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, Activity, ShieldCheck, AlertCircle, Menu } from 'lucide-react';
 import { healthApi } from '@/services/api/health';
 import { cn } from '@/lib/utils';
+import { LanguageSwitcher, useI18n } from '@/i18n';
 
 interface TopbarProps {
   onOpenCommandMenu: () => void;
@@ -10,6 +11,7 @@ interface TopbarProps {
 }
 
 export const Topbar: React.FC<TopbarProps> = ({ onOpenCommandMenu, onToggleSidebar }) => {
+  const { t } = useI18n();
   const { data: health, isError } = useQuery({
     queryKey: ['health'],
     queryFn: healthApi.check,
@@ -24,7 +26,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenCommandMenu, onToggleSideb
           <button
             onClick={onToggleSidebar}
             className="md:hidden p-1.5 rounded text-soc-secondary hover:text-soc-primary hover:bg-soc-elevated"
-            aria-label="Toggle Navigation"
+            aria-label={t('topbar.toggleNavigation')}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -32,20 +34,22 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenCommandMenu, onToggleSideb
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-blue-400" />
           <span className="text-xs font-mono font-medium text-soc-secondary hidden sm:inline">
-            Security Intelligence Console
+            {t('topbar.consoleTitle')}
           </span>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
+        <LanguageSwitcher />
+
         {/* Command Menu Search Trigger */}
         <button
           onClick={onOpenCommandMenu}
           className="flex items-center gap-3 px-3 py-1.5 rounded-md border border-soc-border bg-soc-elevated/70 text-soc-secondary hover:text-soc-primary hover:border-soc-border-light text-xs transition-colors"
-          aria-label="Open Command Menu"
+          aria-label={t('topbar.openCommandMenu')}
         >
           <Search className="w-3.5 h-3.5 text-soc-muted" />
-          <span className="hidden sm:inline">Quick Jump...</span>
+          <span className="hidden sm:inline">{t('topbar.quickJump')}</span>
           <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-soc-muted bg-soc-bg rounded border border-soc-border">
             ⌘K
           </kbd>
@@ -63,19 +67,22 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenCommandMenu, onToggleSideb
           )}
           title={
             isError
-              ? 'Backend API Unreachable'
-              : `Engine ${health?.version || 'Ready'} - DB ${health?.database || 'Connected'}`
+              ? t('topbar.apiUnreachable')
+              : t('topbar.engineStatus', {
+                  version: health?.version || t('topbar.engineReady'),
+                  database: health?.database || t('topbar.dbConnected'),
+                })
           }
         >
           {isError ? (
             <>
               <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-              <span className="hidden md:inline">API OFFLINE</span>
+              <span className="hidden md:inline">{t('topbar.apiOffline')}</span>
             </>
           ) : (
             <>
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden md:inline">LOCAL ENGINE ACTIVE</span>
+              <span className="hidden md:inline">{t('topbar.engineActive')}</span>
             </>
           )}
         </div>

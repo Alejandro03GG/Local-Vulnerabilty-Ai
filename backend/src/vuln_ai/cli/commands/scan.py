@@ -227,8 +227,12 @@ async def _execute_scan_async(
         if output_format == "json":
             payload = format_scan_summary_dict(summary, policy_evaluation=policy_eval)
             json_text = output_json_payload(payload, output_file=output_file)
-            sys.stdout.write(json_text + "\n")
-            sys.stdout.flush()
+            # H15: when -o is set, write only to file; keep stdout clean.
+            if not output_file:
+                sys.stdout.write(json_text + "\n")
+                sys.stdout.flush()
+            else:
+                console_stderr.print(f"[dim]Wrote JSON export to {output_file}[/dim]")
         elif output_format in ("sarif", "cyclonedx", "spdx"):
             try:
                 export_text = ExportService.export_summary(
@@ -237,8 +241,13 @@ async def _execute_scan_async(
                     output_path=output_file,
                     policy_evaluation=policy_eval,
                 )
-                sys.stdout.write(export_text + "\n")
-                sys.stdout.flush()
+                if not output_file:
+                    sys.stdout.write(export_text + "\n")
+                    sys.stdout.flush()
+                else:
+                    console_stderr.print(
+                        f"[dim]Wrote {output_format} export to {output_file}[/dim]"
+                    )
             except Exception as exc:
                 console_stderr.print(f"[bold red]Export error:[/bold red] {exc}")
                 return CLIExitCode.INTERNAL_ERROR

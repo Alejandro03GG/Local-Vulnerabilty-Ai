@@ -272,5 +272,9 @@ Deterministic Risk Engine (RiskAssessment with explicit rule trace)
 - **Determinismo estricto**: La resolución no emplea modelos LLM, SystemOne ni votaciones probabilísticas. Misma entrada garantiza siempre exactamente la misma conclusión.
 - **KEV no falsifica aplicabilidad**: La presencia de un CVE en CISA KEV no transforma mágicamente una versión no afectada (`LIKELY_NOT_AFFECTED`) en afectada. KEV eleva el nivel de riesgo o urgencia de remediación, pero respeta la verdad del rango de versiones.
 
+## Stage 19.1 — Product Hardening Notes
 
-
+- Catalog ingestion is incremental by default (`prune_missing=False`); only full-feed sources such as CISA KEV may prune within their own source scope.
+- Project scanning discovers nested manifests recursively with directory exclusions (`.git`, `node_modules`, `target`, `.venv`, etc.).
+- `cve_id` is optional; canonical identifiers (GHSA, RUSTSEC, OSV) remain first-class.
+- Dockerfile static AST can be persisted as `ContainerImage` with `source_type=dockerfile`.

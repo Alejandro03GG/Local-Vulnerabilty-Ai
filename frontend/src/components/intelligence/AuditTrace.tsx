@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle2, ShieldAlert, AlertTriangle, Layers, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { RiskAssessment } from '@/types';
 
 interface AuditTraceProps {
@@ -9,6 +10,8 @@ interface AuditTraceProps {
 }
 
 export const AuditTrace: React.FC<AuditTraceProps> = ({ assessment, className }) => {
+  const { t } = useI18n();
+
   if (!assessment || !assessment.rule_ids || assessment.rule_ids.length === 0) {
     return (
       <div
@@ -17,7 +20,7 @@ export const AuditTrace: React.FC<AuditTraceProps> = ({ assessment, className })
           className,
         )}
       >
-        No deterministic audit rules were triggered for this evaluation.
+        {t('intelligence.audit.empty')}
       </div>
     );
   }
@@ -28,63 +31,58 @@ export const AuditTrace: React.FC<AuditTraceProps> = ({ assessment, className })
         return {
           icon: ShieldAlert,
           color: 'text-red-400 bg-red-500/10 border-red-500/30',
-          title: 'CISA Known Exploited Vulnerabilities (KEV) Confirmed',
-          description:
-            'Vulnerability is actively cataloged in CISA KEV as known to be exploited in the wild.',
+          title: t('intelligence.audit.kevConfirmed.title'),
+          description: t('intelligence.audit.kevConfirmed.description'),
         };
       case 'SOURCE_APPLICABILITY_CONFLICT':
         return {
           icon: AlertTriangle,
           color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-          title: 'Source Applicability Conflict Detected',
-          description:
-            'Vulnerability intelligence sources disagree on applicability or version ranges; escalated to review.',
+          title: t('intelligence.audit.sourceConflict.title'),
+          description: t('intelligence.audit.sourceConflict.description'),
         };
       case 'APPLICABILITY_LIKELY_AFFECTED':
         return {
           icon: CheckCircle2,
           color: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
-          title: 'Applicability Within Declared Version Range',
-          description:
-            'Installed component version matches affected version range provided by authoritative sources.',
+          title: t('intelligence.audit.likelyAffected.title'),
+          description: t('intelligence.audit.likelyAffected.description'),
         };
       case 'APPLICABILITY_LIKELY_NOT_AFFECTED':
         return {
           icon: CheckCircle2,
           color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
-          title: 'Applicability Outside Declared Range',
-          description:
-            'Installed component version is confirmed outside the affected version range.',
+          title: t('intelligence.audit.likelyNotAffected.title'),
+          description: t('intelligence.audit.likelyNotAffected.description'),
         };
       case 'CVSS_CRITICAL':
       case 'CVSS_HIGH':
         return {
           icon: ShieldAlert,
           color: 'text-orange-400 bg-orange-500/10 border-orange-500/30',
-          title: 'Elevated CVSS Severity Metric',
-          description: 'CVSS score indicates high or critical technical severity.',
+          title: t('intelligence.audit.cvssElevated.title'),
+          description: t('intelligence.audit.cvssElevated.description'),
         };
       case 'VERSION_DECLARED':
         return {
           icon: CheckCircle2,
           color: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
-          title: 'Concrete Version Declared',
-          description:
-            'Component declares an exact pinned version allowing semantic version evaluation.',
+          title: t('intelligence.audit.versionDeclared.title'),
+          description: t('intelligence.audit.versionDeclared.description'),
         };
       case 'MATCH_COMPONENT_ONLY':
         return {
           icon: Layers,
           color: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
-          title: 'Component Identity Matched',
-          description: 'Ecosystem and package name verified against vulnerability advisory record.',
+          title: t('intelligence.audit.componentMatched.title'),
+          description: t('intelligence.audit.componentMatched.description'),
         };
       default:
         return {
           icon: Info,
           color: 'text-slate-400 bg-slate-500/10 border-slate-500/30',
-          title: `Rule: ${ruleId}`,
-          description: 'Evaluated by Deterministic Risk Engine.',
+          title: t('intelligence.audit.ruleFallbackTitle', { ruleId }),
+          description: t('intelligence.audit.ruleFallbackDescription'),
         };
     }
   };
@@ -115,7 +113,7 @@ export const AuditTrace: React.FC<AuditTraceProps> = ({ assessment, className })
                     {detail.title}
                   </span>
                   <span className="text-[11px] font-mono text-soc-muted px-1.5 py-0.5 rounded bg-soc-elevated">
-                    Step {index + 1}: {ruleId}
+                    {t('intelligence.audit.step', { index: index + 1, ruleId })}
                   </span>
                 </div>
                 <p className="text-xs text-soc-secondary mt-1 font-sans leading-relaxed">
@@ -129,7 +127,9 @@ export const AuditTrace: React.FC<AuditTraceProps> = ({ assessment, className })
 
       {assessment.rationale && (
         <div className="mt-4 p-3 rounded-md bg-soc-elevated/70 border border-soc-border text-xs text-soc-secondary">
-          <strong className="text-soc-primary font-mono block mb-1">DETERMINISTIC RATIONALE</strong>
+          <strong className="text-soc-primary font-mono block mb-1">
+            {t('intelligence.audit.rationale')}
+          </strong>
           <p className="font-sans leading-relaxed">{assessment.rationale}</p>
         </div>
       )}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import uuid
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -24,9 +25,15 @@ from vuln_ai.cli.output.json_out import format_scan_summary_dict, output_json_pa
 from vuln_ai.cli.output.table import console_stderr, console_stdout, render_scan_table
 from vuln_ai.config import get_settings
 from vuln_ai.container.dockerfile import parse_dockerfile_file
+from vuln_ai.container.models import ContainerImage
 from vuln_ai.core.engine import ScanEngine
 from vuln_ai.core.models import ScanStatus
-from vuln_ai.db.repositories import SuppressionRepository
+from vuln_ai.db.repositories import (
+    ContainerRepository,
+    ProjectRepository,
+    ScanRepository,
+    SuppressionRepository,
+)
 from vuln_ai.export.service import ExportService
 from vuln_ai.matching.conflict import ConflictResolver
 from vuln_ai.matching.matcher import VulnerabilityMatcher
@@ -186,6 +193,53 @@ def scan_image_command(
     ):
         try:
             doc = parse_dockerfile_file(target)
+
+            async def _persist_dockerfile() -> str | None:
+                async with get_cli_session() as session:
+                    if not await is_db_schema_ready(session):
+                        console_stderr.print(
+                            "[yellow]Database not ready; Dockerfile AST not persisted.[/yellow]"
+                        )
+                        return None
+                    proj_repo = ProjectRepository(session)
+                    scan_repo = ScanRepository(session)
+                    container_repo = ContainerRepository(session)
+                    source_path = str(target.resolve())
+                    project, _ = await proj_repo.get_or_create(
+                        name=f"dockerfile:{target.name}",
+                        path=source_path,
+                        description="Dockerfile static AST scan",
+                    )
+                    db_scan = await scan_repo.create(project.id)
+                    ast_payload = {
+                        "dockerfile_ast": {
+                            "source_file": doc.source_file,
+                            "stages": [s.model_dump(mode="json") for s in doc.stages],
+                            "base_images": [b.model_dump(mode="json") for b in doc.base_images],
+                            "package_installations": doc.package_installations,
+                            "copied_files": doc.copied_files,
+                            "dependency_manifests": doc.dependency_manifests,
+                        }
+                    }
+                    domain_image = ContainerImage(
+                        id=str(uuid.uuid4()),
+                        reference=target.name,
+                        source_type="dockerfile",
+                        source_path=source_path,
+                        metadata=ast_payload,
+                    )
+                    db_image = await container_repo.create_image(
+                        scan_id=db_scan.id, image=domain_image, commit=True
+                    )
+                    await scan_repo.complete(db_scan.id)
+                    return db_image.id
+
+            image_id = run_async_cli(_persist_dockerfile())
+            if image_id:
+                console_stderr.print(
+                    f"[dim]Persisted Dockerfile AST as image {image_id}[/dim]"
+                )
+
             if fmt == "json":
                 out_bytes = doc.model_dump_json(indent=2).encode("utf-8")
                 if output:
@@ -299,8 +353,11 @@ def scan_image_command(
             elif fmt == "json":
                 payload = format_scan_summary_dict(summary, policy_evaluation=policy_eval)
                 json_text = output_json_payload(payload, output_file=output)
-                sys.stdout.write(json_text + "\n")
-                sys.stdout.flush()
+                if not output:
+                    sys.stdout.write(json_text + "\n")
+                    sys.stdout.flush()
+                else:
+                    console_stderr.print(f"[dim]Wrote JSON export to {output}[/dim]")
 
             elif fmt in ("sarif", "cyclonedx", "spdx"):
                 try:
@@ -313,6 +370,8 @@ def scan_image_command(
                     if not output:
                         sys.stdout.write(export_text + "\n")
                         sys.stdout.flush()
+                    else:
+                        console_stderr.print(f"[dim]Wrote {fmt} export to {output}[/dim]")
                 except Exception as exc:
                     console_stderr.print(f"[bold red]Export error:[/bold red] {exc}")
                     return CLIExitCode.INTERNAL_ERROR

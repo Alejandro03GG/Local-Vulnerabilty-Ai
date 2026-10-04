@@ -15,12 +15,15 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { useToast } from '@/hooks/useToast';
 import { matchesApi } from '@/services/api/matches';
 import { formatDate, formatPercent } from '@/lib/utils';
+import { useI18n } from '@/i18n';
+import { vulnerabilityDisplayId } from '@/lib/vulnerabilityId';
 
 export const MatchDetailPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { t, dateLocale } = useI18n();
 
   const {
     data: match,
@@ -39,24 +42,26 @@ export const MatchDetailPage: React.FC = () => {
     onSuccess: (updatedMatch) => {
       queryClient.setQueryData(['match', matchId], updatedMatch);
       queryClient.invalidateQueries({ queryKey: ['matches'] });
-      showToast('success', 'Match re-analyzed', 'AI and Risk evaluations refreshed successfully.');
+      showToast(
+        'success',
+        t('matchDetail.toastReanalyzed'),
+        t('matchDetail.toastReanalyzedDescription'),
+      );
     },
     onError: (err: { message: string }) => {
-      showToast('error', 'Reanalysis failed', err.message);
+      showToast('error', t('matchDetail.toastReanalyzeFailed'), err.message);
     },
   });
 
   if (isLoading) {
-    return (
-      <LoadingState message="Aggregating multi-source intelligence, AI evaluations, and audit traces..." />
-    );
+    return <LoadingState message={t('matchDetail.loading')} />;
   }
 
   if (isError || !match) {
     return (
       <ErrorState
-        title="Vulnerability Match Not Found"
-        description="The requested correlation record could not be retrieved from the engine."
+        title={t('matchDetail.notFoundTitle')}
+        description={t('matchDetail.notFoundDescription')}
         requestId={(error as { requestId?: string })?.requestId}
         onRetry={() => refetch()}
       />
@@ -72,44 +77,55 @@ export const MatchDetailPage: React.FC = () => {
   return (
     <div className="space-y-6" data-testid="match-detail-page">
       <PageHeader
-        title={`Match: ${comp?.name || 'Package'} ${comp?.version || ''}`}
-        subtitle={`Vulnerability Correlation: ${vuln?.cve_id || match.vulnerability_id}`}
+        title={t('matchDetail.title', {
+          name: comp?.name || t('matchDetail.packageFallback'),
+          version: comp?.version || '',
+        })}
+        subtitle={t('matchDetail.subtitle', {
+          id: vulnerabilityDisplayId(vuln, match.vulnerability_id),
+        })}
         backTo="/matches"
         actions={
           <button
             onClick={() => reanalyzeMutation.mutate()}
             disabled={reanalyzeMutation.isPending}
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-500 transition-colors shadow-sm disabled:opacity-50"
-            aria-label="Reanalyze match with AI engine"
+            aria-label={t('matchDetail.reanalyzeAria')}
           >
             <RotateCw
               className={reanalyzeMutation.isPending ? 'w-3.5 h-3.5 animate-spin' : 'w-3.5 h-3.5'}
             />
-            <span>{reanalyzeMutation.isPending ? 'Reanalyzing...' : 'Re-Evaluate Match'}</span>
+            <span>
+              {reanalyzeMutation.isPending
+                ? t('matchDetail.reanalyzing')
+                : t('matchDetail.reevaluate')}
+            </span>
           </button>
         }
       />
 
       {/* 1. MATCH OVERVIEW */}
       <section
-        aria-label="Match Overview"
+        aria-label={t('matchDetail.overviewAria')}
         className="p-5 rounded-lg border border-soc-border bg-soc-surface space-y-4"
         data-testid="match-overview-section"
       >
         <div className="flex items-center justify-between pb-3 border-b border-soc-border">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-400" />
-            <h2 className="text-sm font-semibold text-soc-primary">Match Telemetry Overview</h2>
+            <h2 className="text-sm font-semibold text-soc-primary">
+              {t('matchDetail.overviewTitle')}
+            </h2>
           </div>
           <span className="text-[11px] font-mono text-soc-muted">
-            Correlated at {formatDate(match.matched_at)}
+            {t('matchDetail.correlatedAt', { date: formatDate(match.matched_at, dateLocale) })}
           </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Component
+              {t('matchDetail.component')}
             </span>
             <span className="font-mono text-xs font-bold text-soc-primary mt-1 block truncate">
               {comp?.name || '—'}
@@ -118,7 +134,7 @@ export const MatchDetailPage: React.FC = () => {
 
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Installed Version
+              {t('matchDetail.installedVersion')}
             </span>
             <span className="font-mono text-xs font-bold text-blue-400 mt-1 block truncate">
               {comp?.version || '—'}
@@ -127,7 +143,7 @@ export const MatchDetailPage: React.FC = () => {
 
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Ecosystem
+              {t('matchDetail.ecosystem')}
             </span>
             <span className="font-mono text-xs font-bold text-soc-primary mt-1 block uppercase truncate">
               {comp?.ecosystem || '—'}
@@ -136,7 +152,7 @@ export const MatchDetailPage: React.FC = () => {
 
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Applicability
+              {t('matchDetail.applicability')}
             </span>
             <div className="mt-1">
               <ApplicabilityBadge status={match.applicability} />
@@ -145,7 +161,7 @@ export const MatchDetailPage: React.FC = () => {
 
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Risk Posture
+              {t('matchDetail.riskPosture')}
             </span>
             <div className="mt-1">
               <RiskBadge level={match.risk_assessment?.risk_level || 'UNKNOWN'} />
@@ -154,7 +170,7 @@ export const MatchDetailPage: React.FC = () => {
 
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Human Review
+              {t('matchDetail.humanReview')}
             </span>
             <div className="mt-1">
               <ReviewBadge requiresReview={requiresReview} />
@@ -166,16 +182,20 @@ export const MatchDetailPage: React.FC = () => {
         {vuln && (
           <div className="p-3.5 rounded bg-soc-elevated/40 border border-soc-border flex items-center justify-between">
             <div>
-              <span className="font-mono text-xs font-bold text-rose-400 block">{vuln.cve_id}</span>
+              <span className="font-mono text-xs font-bold text-rose-400 block">
+                {vulnerabilityDisplayId(vuln)}
+              </span>
               <p className="text-xs text-soc-secondary mt-0.5 font-sans line-clamp-1">
-                {vuln.vulnerability_name || vuln.short_description || 'Security Advisory Record'}
+                {vuln.vulnerability_name ||
+                  vuln.short_description ||
+                  t('matchDetail.advisoryFallback')}
               </p>
             </div>
             <button
               onClick={() => navigate(`/vulnerabilities/${vuln.id}`)}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono text-blue-400 hover:text-white rounded bg-soc-elevated border border-soc-border transition-colors"
             >
-              <span>Advisory Detail</span>
+              <span>{t('matchDetail.advisoryDetail')}</span>
               <ExternalLink className="w-3 h-3" />
             </button>
           </div>
@@ -184,16 +204,14 @@ export const MatchDetailPage: React.FC = () => {
 
       {/* DEPENDENCY INTELLIGENCE & GRAPH PROVENANCE */}
       <section
-        aria-label="Dependency Intelligence"
+        aria-label={t('matchDetail.depAria')}
         className="p-5 rounded-lg border border-soc-border bg-soc-surface space-y-4"
         data-testid="dependency-intelligence-section"
       >
         <div className="flex items-center justify-between pb-3 border-b border-soc-border">
           <div className="flex items-center gap-2">
             <GitFork className="w-4 h-4 text-cyan-400" />
-            <h2 className="text-sm font-semibold text-soc-primary">
-              Dependency Intelligence & Graph Provenance
-            </h2>
+            <h2 className="text-sm font-semibold text-soc-primary">{t('matchDetail.depTitle')}</h2>
           </div>
           <span
             className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${
@@ -203,15 +221,15 @@ export const MatchDetailPage: React.FC = () => {
             }`}
           >
             {(comp?.is_direct ?? comp?.dependency_type === 'direct')
-              ? 'DIRECT DEPENDENCY'
-              : 'TRANSITIVE DEPENDENCY'}
+              ? t('matchDetail.directDependency')
+              : t('matchDetail.transitiveDependency')}
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Origin Source
+              {t('matchDetail.originSource')}
             </span>
             <span
               className="font-mono text-xs font-semibold text-soc-primary mt-1 block truncate"
@@ -222,7 +240,9 @@ export const MatchDetailPage: React.FC = () => {
           </div>
 
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
-            <span className="text-[10px] font-mono uppercase text-soc-secondary block">Scope</span>
+            <span className="text-[10px] font-mono uppercase text-soc-secondary block">
+              {t('matchDetail.scope')}
+            </span>
             <span className="font-mono text-xs font-semibold text-soc-secondary mt-1 uppercase block">
               {comp?.scope || 'runtime'}
             </span>
@@ -230,7 +250,7 @@ export const MatchDetailPage: React.FC = () => {
 
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Manifest Source
+              {t('matchDetail.manifestSource')}
             </span>
             <span
               className="font-mono text-xs text-soc-muted mt-1 block truncate"
@@ -238,16 +258,17 @@ export const MatchDetailPage: React.FC = () => {
             >
               {comp?.manifest_source
                 ? comp.manifest_source.split('/').pop()
-                : 'Direct from lockfile'}
+                : t('matchDetail.directFromLockfile')}
             </span>
           </div>
 
           <div className="p-3 rounded bg-soc-elevated border border-soc-border">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Immediate Parent
+              {t('matchDetail.immediateParent')}
             </span>
             <span className="font-mono text-xs font-semibold text-soc-primary mt-1 block truncate">
-              {comp?.parent_name || (comp?.is_direct ? 'Root Project' : 'Direct')}
+              {comp?.parent_name ||
+                (comp?.is_direct ? t('matchDetail.rootProject') : t('matchDetail.parentDirect'))}
             </span>
           </div>
         </div>
@@ -256,10 +277,10 @@ export const MatchDetailPage: React.FC = () => {
         {comp?.dependency_path && comp.dependency_path.length > 0 && (
           <div className="p-3.5 rounded bg-soc-elevated/40 border border-soc-border space-y-2">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
-              Dependency Resolution Trail
+              {t('matchDetail.resolutionTrail')}
             </span>
             <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
-              <span className="text-soc-muted">project</span>
+              <span className="text-soc-muted">{t('matchDetail.project')}</span>
               {comp.dependency_path.map((segment, idx) => (
                 <React.Fragment key={idx}>
                   <span className="text-soc-muted">→</span>
@@ -280,26 +301,28 @@ export const MatchDetailPage: React.FC = () => {
       </section>
 
       {/* 2. SOURCE CONFLICTS (Mandatory section - prominent discrepancy callout) */}
-      <section aria-label="Source Conflicts Section">
+      <section aria-label={t('matchDetail.conflictsAria')}>
         <h2 className="text-sm font-semibold text-soc-primary mb-2 flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-amber-400" />
-          Multi-Source Intelligence Discrepancy & Conflicts
+          {t('matchDetail.conflictsTitle')}
         </h2>
         <ConflictPanel conflicts={match.conflicts || []} />
       </section>
 
       {/* 3. VERSION EVIDENCE (Structured evidence breakdown per source) */}
       <section
-        aria-label="Version Evidence"
+        aria-label={t('matchDetail.evidenceAria')}
         className="p-5 rounded-lg border border-soc-border bg-soc-surface space-y-3"
       >
         <div className="flex items-center justify-between pb-2 border-b border-soc-border">
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4 text-blue-400" />
-            <h2 className="text-sm font-semibold text-soc-primary">Source Version Evidence</h2>
+            <h2 className="text-sm font-semibold text-soc-primary">
+              {t('matchDetail.evidenceTitle')}
+            </h2>
           </div>
           <span className="text-[11px] font-mono text-soc-muted">
-            Version-Aware Matcher Evidence Records
+            {t('matchDetail.evidenceSubtitle')}
           </span>
         </div>
 
@@ -308,13 +331,13 @@ export const MatchDetailPage: React.FC = () => {
             <table className="w-full text-left text-xs font-mono text-soc-secondary">
               <thead className="bg-soc-elevated/70 text-soc-primary border-b border-soc-border text-[11px] uppercase">
                 <tr>
-                  <th className="px-3 py-2">Source</th>
-                  <th className="px-3 py-2">Identifier</th>
-                  <th className="px-3 py-2">Package</th>
-                  <th className="px-3 py-2">Installed</th>
-                  <th className="px-3 py-2">Affected Range</th>
-                  <th className="px-3 py-2">Fixed Version</th>
-                  <th className="px-3 py-2">Verdict</th>
+                  <th className="px-3 py-2">{t('matchDetail.evidenceCols.source')}</th>
+                  <th className="px-3 py-2">{t('matchDetail.evidenceCols.identifier')}</th>
+                  <th className="px-3 py-2">{t('matchDetail.evidenceCols.package')}</th>
+                  <th className="px-3 py-2">{t('matchDetail.evidenceCols.installed')}</th>
+                  <th className="px-3 py-2">{t('matchDetail.evidenceCols.affectedRange')}</th>
+                  <th className="px-3 py-2">{t('matchDetail.evidenceCols.fixedVersion')}</th>
+                  <th className="px-3 py-2">{t('matchDetail.evidenceCols.verdict')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-soc-border">
@@ -329,7 +352,9 @@ export const MatchDetailPage: React.FC = () => {
                     <td className="px-3 py-2 text-soc-primary font-bold">
                       {ev.affected_range || '—'}
                     </td>
-                    <td className="px-3 py-2 text-emerald-400">{ev.fixed_version || 'None'}</td>
+                    <td className="px-3 py-2 text-emerald-400">
+                      {ev.fixed_version || t('matchDetail.noFixedVersion')}
+                    </td>
                     <td className="px-3 py-2">
                       <ApplicabilityBadge status={ev.status} />
                     </td>
@@ -349,7 +374,7 @@ export const MatchDetailPage: React.FC = () => {
                 ))}
               </ul>
             ) : (
-              'No discrete version evidence recorded by matcher.'
+              t('matchDetail.noEvidence')
             )}
           </div>
         )}
@@ -363,21 +388,19 @@ export const MatchDetailPage: React.FC = () => {
 
       {/* 5. RISK ASSESSMENT & AUDIT TRACE */}
       <section
-        aria-label="Risk Assessment & Audit Trace"
+        aria-label={t('matchDetail.riskAria')}
         className="p-5 rounded-lg border border-soc-border bg-soc-surface space-y-5"
       >
         <div className="flex items-center justify-between pb-3 border-b border-soc-border">
           <div>
-            <h2 className="text-sm font-semibold text-soc-primary">
-              Deterministic Risk Engine Assessment
-            </h2>
+            <h2 className="text-sm font-semibold text-soc-primary">{t('matchDetail.riskTitle')}</h2>
             <p className="text-xs text-soc-secondary font-sans mt-0.5">
-              Rule-based, audit-trailed certainty evaluation with zero LLM hallucination risk
+              {t('matchDetail.riskSubtitle')}
             </p>
           </div>
           {match.risk_assessment && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-soc-muted">Certainty:</span>
+              <span className="text-xs font-mono text-soc-muted">{t('matchDetail.certainty')}</span>
               <span className="text-xs font-mono font-bold text-soc-primary">
                 {formatPercent(match.risk_assessment.certainty)}
               </span>
@@ -388,7 +411,7 @@ export const MatchDetailPage: React.FC = () => {
         {match.risk_assessment && match.risk_assessment.recommended_action && (
           <div className="p-3.5 rounded bg-blue-950/20 border border-blue-500/30 text-xs">
             <span className="font-mono uppercase text-blue-400 font-bold block mb-1">
-              Recommended Remediation Action
+              {t('matchDetail.recommendedAction')}
             </span>
             <p className="text-soc-primary font-sans leading-relaxed">
               {match.risk_assessment.recommended_action}
@@ -398,7 +421,7 @@ export const MatchDetailPage: React.FC = () => {
 
         <div>
           <h3 className="text-xs font-mono uppercase text-soc-secondary tracking-wider mb-3">
-            Execution Rule Audit Trail
+            {t('matchDetail.auditTrail')}
           </h3>
           <AuditTrace assessment={match.risk_assessment} />
         </div>

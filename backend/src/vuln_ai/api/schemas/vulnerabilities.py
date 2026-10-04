@@ -11,8 +11,15 @@ class VulnerabilityResponse(BaseModel):
     """Vulnerability record representation returned by the API."""
 
     id: str = Field(description="Unique vulnerability identifier (UUID)")
-    cve_id: str = Field(description="CVE identifier, e.g. CVE-2021-44228")
-    source_id: str = Field(description="Source identifier (UUID)")
+    canonical_id: str = Field(
+        default="",
+        description="Primary catalog identifier (CVE, GHSA, OSV, RUSTSEC, etc.)",
+    )
+    cve_id: str | None = Field(
+        default=None,
+        description="CVE identifier when assigned; null for GHSA/OSV/RUSTSEC-only advisories",
+    )
+    source_id: str | None = Field(default=None, description="Owning source identifier (UUID)")
     vendor_project: str = Field(description="Vendor or organization")
     product: str = Field(description="Affected product or software component name")
     vulnerability_name: str = Field(description="Short human-readable title")

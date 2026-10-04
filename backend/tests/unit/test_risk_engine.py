@@ -115,7 +115,7 @@ def test_high_applicability_with_version_and_direct_exposure(base_match: MatchRe
 
 
 def test_low_applicability_produces_likely_not_affected(base_match: MatchResult):
-    """Low applicability probability leads to LIKELY_NOT_AFFECTED and LOW risk."""
+    """Low applicability probability leads to LIKELY_NOT_AFFECTED without LOW risk inflation (H10)."""
     engine = DeterministicRiskEngine()
 
     decision = DecisionResult(
@@ -132,7 +132,7 @@ def test_low_applicability_produces_likely_not_affected(base_match: MatchResult)
     assert "AI_APPLICABILITY_LOW" in assessment.rule_ids
     assert "EXPOSURE_INDIRECT" in assessment.rule_ids
     assert assessment.status == RiskStatus.LIKELY_NOT_AFFECTED
-    assert assessment.risk_level == RiskLevel.LOW
+    assert assessment.risk_level == RiskLevel.UNKNOWN
     assert assessment.requires_human_review is False
 
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { ScanStatus } from '@/types';
 
 interface ScanStatusBadgeProps {
@@ -9,6 +10,8 @@ interface ScanStatusBadgeProps {
 }
 
 export const ScanStatusBadge: React.FC<ScanStatusBadgeProps> = ({ status, className }) => {
+  const { t } = useI18n();
+
   switch (status.toLowerCase()) {
     case 'running':
       return (
@@ -21,7 +24,7 @@ export const ScanStatusBadge: React.FC<ScanStatusBadgeProps> = ({ status, classN
           data-testid="badge-status-running"
         >
           <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" aria-hidden="true" />
-          <span>RUNNING</span>
+          <span>{t('badges.scanStatus.running')}</span>
         </span>
       );
 
@@ -36,7 +39,7 @@ export const ScanStatusBadge: React.FC<ScanStatusBadgeProps> = ({ status, classN
           data-testid="badge-status-pending"
         >
           <Clock className="w-3.5 h-3.5 text-yellow-400" aria-hidden="true" />
-          <span>PENDING</span>
+          <span>{t('badges.scanStatus.pending')}</span>
         </span>
       );
 
@@ -51,7 +54,7 @@ export const ScanStatusBadge: React.FC<ScanStatusBadgeProps> = ({ status, classN
           data-testid="badge-status-completed"
         >
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-          <span>COMPLETED</span>
+          <span>{t('badges.scanStatus.completed')}</span>
         </span>
       );
 
@@ -66,7 +69,7 @@ export const ScanStatusBadge: React.FC<ScanStatusBadgeProps> = ({ status, classN
           data-testid="badge-status-failed"
         >
           <XCircle className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
-          <span>FAILED</span>
+          <span>{t('badges.scanStatus.failed')}</span>
         </span>
       );
 

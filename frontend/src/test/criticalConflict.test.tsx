@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { ToastProvider } from '@/components/ui/Toast';
+import { LanguageProvider } from '@/i18n';
 import { mockConflictedMatch } from './fixtures';
 import * as matchesApiModule from '@/services/api/matches';
 
@@ -16,15 +17,17 @@ describe('CRITICAL REQUIREMENT — Match with source conflict (Etapa 10 §55)', 
     });
 
     const { container } = render(
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <MemoryRouter initialEntries={['/matches/match-conflict-001']}>
-            <Routes>
-              <Route path="/matches/:matchId" element={<MatchDetailPage />} />
-            </Routes>
-          </MemoryRouter>
-        </ToastProvider>
-      </QueryClientProvider>,
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <ToastProvider>
+            <MemoryRouter initialEntries={['/matches/match-conflict-001']}>
+              <Routes>
+                <Route path="/matches/:matchId" element={<MatchDetailPage />} />
+              </Routes>
+            </MemoryRouter>
+          </ToastProvider>
+        </QueryClientProvider>
+      </LanguageProvider>,
     );
 
     // 1. Wait for match data to load into the DOM

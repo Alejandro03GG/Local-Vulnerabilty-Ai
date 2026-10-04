@@ -470,20 +470,36 @@ class PolicyEngine:
                 )
                 sev_lvl = (match.vulnerability.severity or "").upper().strip()
                 threshold_fail_on = [t.upper().strip() for t in self.policy.thresholds.fail_on]
+                # Catalog severity alone must not punish findings explicitly not affected (H13).
+                not_technically_applicable = match.applicability in {
+                    Applicability.LIKELY_NOT_AFFECTED,
+                }
+                risk_hits = bool(risk_lvl and risk_lvl in threshold_fail_on)
+                severity_hits = bool(
+                    sev_lvl and sev_lvl in threshold_fail_on and not not_technically_applicable
+                )
 
-                if (risk_lvl and risk_lvl in threshold_fail_on) or (
-                    sev_lvl and sev_lvl in threshold_fail_on
-                ):
+                if risk_hits or severity_hits:
                     chosen_action = PolicyAction.BLOCK
                     chosen_status = PolicyStatus.VIOLATION
-                    rule_reason = f"Security threshold violated: risk={risk_lvl or sev_lvl}"
+                    trigger = "risk" if risk_hits else "advisory_severity"
+                    rule_reason = (
+                        "Security threshold violated: "
+                        f"trigger={trigger}; fail_on={threshold_fail_on}; "
+                        f"risk={risk_lvl or 'n/a'}; "
+                        f"advisory_severity={sev_lvl or 'n/a'}; "
+                        f"applicability={match.applicability.value}"
+                    )
                 elif self.policy.thresholds.fail_on_review and (
                     getattr(match.risk_assessment, "requires_human_review", False)
                     or match.applicability == Applicability.REQUIRES_REVIEW
                 ):
                     chosen_action = PolicyAction.REQUIRE_REVIEW
                     chosen_status = PolicyStatus.REQUIRES_REVIEW
-                    rule_reason = "Security threshold violated: finding requires human review"
+                    rule_reason = (
+                        "Security threshold violated: finding requires human review; "
+                        f"applicability={match.applicability.value}"
+                    )
 
             # Step 4: Default Fallback Action
             if chosen_action is None:

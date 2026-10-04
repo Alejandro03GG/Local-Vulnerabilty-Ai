@@ -37,6 +37,20 @@ _MAX_LOCKFILE_SIZE = 30 * 1024 * 1024
 _PNPM_PKG_KEY_RE = re.compile(r"^/?(?P<name>(?:@[^/@]+/)?[^/@()]+)[@/](?P<version>[^()_]+)")
 
 
+
+def _load_pnpm_lock_yaml(content: str) -> dict:
+    """Parse pnpm-lock.yaml, including multi-document streams (pnpm 9+).
+
+    Uses ``yaml.safe_load_all`` only (never unsafe ``yaml.load``). Documents are
+    shallow-merged so keys like ``packages`` / ``importers`` survive across ``---``.
+    """
+    merged: dict = {}
+    for doc in yaml.safe_load_all(content):
+        if isinstance(doc, dict):
+            merged.update(doc)
+    return merged
+
+
 class PnpmLockScanner:
     """Scanner for pnpm-lock.yaml lockfiles."""
 
@@ -83,12 +97,12 @@ class PnpmLockScanner:
                 logger.error("Lockfile %s exceeds maximum size (%d bytes)", lock_file, size)
                 return graph
             content = lock_file.read_text(encoding="utf-8")
-            data = yaml.safe_load(content)
+            data = _load_pnpm_lock_yaml(content)
         except Exception as exc:
-            logger.warning("Failed to parse %s with safe_load: %s", lock_file, exc)
+            logger.warning("Failed to parse %s with safe_load_all: %s", lock_file, exc)
             return graph
 
-        if not isinstance(data, dict):
+        if not data:
             return graph
 
         direct_names, dev_names = self._extract_root_dependencies(

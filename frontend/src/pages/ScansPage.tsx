@@ -7,10 +7,12 @@ import { ScanStatusBadge } from '@/components/badges/ScanStatusBadge';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { scansApi } from '@/services/api/scans';
 import { formatDate, formatDuration } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { Scan } from '@/types';
 
 export const ScansPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, dateLocale } = useI18n();
   const [page] = useState(1);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -27,7 +29,7 @@ export const ScansPage: React.FC = () => {
   const columns: Column<Scan>[] = [
     {
       key: 'id',
-      header: 'Scan ID',
+      header: t('scans.cols.scanId'),
       sortable: true,
       render: (s) => (
         <span className="font-mono text-xs font-semibold text-blue-400">
@@ -37,26 +39,28 @@ export const ScansPage: React.FC = () => {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('scans.cols.status'),
       sortable: true,
       render: (s) => <ScanStatusBadge status={s.status} />,
     },
     {
       key: 'project_id',
-      header: 'Project ID',
+      header: t('scans.cols.projectId'),
       render: (s) => (
         <span className="font-mono text-xs text-soc-secondary">{s.project_id.substring(0, 8)}</span>
       ),
     },
     {
       key: 'started_at',
-      header: 'Started At',
+      header: t('scans.cols.startedAt'),
       sortable: true,
-      render: (s) => <span className="font-mono text-xs">{formatDate(s.started_at)}</span>,
+      render: (s) => (
+        <span className="font-mono text-xs">{formatDate(s.started_at, dateLocale)}</span>
+      ),
     },
     {
       key: 'duration_seconds',
-      header: 'Duration',
+      header: t('scans.cols.duration'),
       sortable: true,
       render: (s) => (
         <span className="font-mono text-xs">{formatDuration(s.duration_seconds)}</span>
@@ -64,13 +68,13 @@ export const ScansPage: React.FC = () => {
     },
     {
       key: 'components_found',
-      header: 'Components',
+      header: t('scans.cols.components'),
       sortable: true,
       render: (s) => <span className="font-mono text-xs">{s.components_found}</span>,
     },
     {
       key: 'vulnerabilities_found',
-      header: 'Matches Found',
+      header: t('scans.cols.matchesFound'),
       sortable: true,
       render: (s) => (
         <span className="font-mono text-xs font-semibold text-soc-primary">
@@ -80,12 +84,12 @@ export const ScansPage: React.FC = () => {
     },
     {
       key: 'kev_matches',
-      header: 'KEV Exploited',
+      header: t('scans.cols.kevExploited'),
       sortable: true,
       render: (s) =>
         s.kev_matches > 0 ? (
           <span className="font-mono text-xs text-red-400 font-bold px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/30">
-            {s.kev_matches} KEV
+            {t('scans.kevCount', { count: s.kev_matches })}
           </span>
         ) : (
           <span className="font-mono text-xs text-soc-muted">0</span>
@@ -96,8 +100,8 @@ export const ScansPage: React.FC = () => {
   if (isError) {
     return (
       <ErrorState
-        title="Failed to Load Scans"
-        description="Could not query execution telemetry from the local engine."
+        title={t('scans.errorTitle')}
+        description={t('scans.errorDescription')}
         requestId={(error as { requestId?: string })?.requestId}
         onRetry={() => refetch()}
       />
@@ -106,18 +110,15 @@ export const ScansPage: React.FC = () => {
 
   return (
     <div className="space-y-6" data-testid="scans-page">
-      <PageHeader
-        title="Vulnerability Scans"
-        subtitle="Historical and in-progress scan executions against project dependencies"
-      />
+      <PageHeader title={t('scans.title')} subtitle={t('scans.subtitle')} />
 
       <DataTable
         columns={columns}
         data={data?.items ?? []}
         keyExtractor={(s) => s.id}
         isLoading={isLoading}
-        emptyTitle="No scans executed yet"
-        emptyDescription="Start a scan from the Projects page to inspect dependencies for vulnerabilities."
+        emptyTitle={t('scans.emptyTitle')}
+        emptyDescription={t('scans.emptyDescription')}
         onRowClick={(s) => navigate(`/scans/${s.id}`)}
       />
     </div>

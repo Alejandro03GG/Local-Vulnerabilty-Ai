@@ -119,3 +119,30 @@ CMD ["nginx", "-g", "daemon off;"]
     # Line numbers preserved
     assert doc.instructions[0].instruction == "FROM"
     assert doc.instructions[0].line_number == 2
+
+
+def test_extract_apt_pinned_versions():
+    """H8: apt-get install package=version must enter package_installations."""
+    pinned = extract_package_installs(
+        "apt-get update && apt-get install -y curl=7.88.1-1 openssl=3.0.2-0ubuntu1",
+        7,
+        "runtime",
+    )
+    assert len(pinned) == 1
+    assert pinned[0]["manager"] == "apt"
+    assert "curl" in pinned[0]["packages"]
+    assert "openssl" in pinned[0]["packages"]
+    assert pinned[0]["pinned"] == [
+        {"name": "curl", "version": "7.88.1-1"},
+        {"name": "openssl", "version": "3.0.2-0ubuntu1"},
+    ]
+
+
+def test_extract_apt_chained_and_multiple():
+    installs = extract_package_installs(
+        "apt-get update && apt-get install -y --no-install-recommends foo=1.0 bar baz=2.0",
+        3,
+        "build",
+    )
+    assert installs[0]["packages"] == ["foo", "bar", "baz"]
+    assert {"name": "foo", "version": "1.0"} in installs[0]["pinned"]

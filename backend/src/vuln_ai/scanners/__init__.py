@@ -7,6 +7,7 @@ from vuln_ai.scanners.pnpm_scanner import PnpmLockScanner
 from vuln_ai.scanners.poetry_scanner import PoetryLockScanner
 from vuln_ai.scanners.python_scanner import PythonScanner
 from vuln_ai.scanners.registry import ScannerRegistry
+from vuln_ai.scanners.uv_scanner import UvLockScanner
 
 __all__ = [
     "CargoLockScanner",
@@ -16,4 +17,5 @@ __all__ = [
     "ProjectScanner",
     "PythonScanner",
     "ScannerRegistry",
+    "UvLockScanner",
 ]

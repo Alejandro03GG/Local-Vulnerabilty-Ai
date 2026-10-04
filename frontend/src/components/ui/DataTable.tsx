@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import { TableSkeleton } from './LoadingState';
 import { EmptyState } from './EmptyState';
 
@@ -28,11 +29,12 @@ export function DataTable<T>({
   data,
   keyExtractor,
   isLoading = false,
-  emptyTitle = 'No records found',
-  emptyDescription = 'There are no items matching the current query.',
+  emptyTitle,
+  emptyDescription,
   onRowClick,
   className,
 }: DataTableProps<T>) {
+  const { t } = useI18n();
   const [sortKey, setSortKey] = React.useState<string | null>(null);
   const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('asc');
 
@@ -67,7 +69,12 @@ export function DataTable<T>({
   }
 
   if (data.length === 0) {
-    return <EmptyState title={emptyTitle} description={emptyDescription} />;
+    return (
+      <EmptyState
+        title={emptyTitle ?? t('ui.dataTable.emptyTitle')}
+        description={emptyDescription ?? t('ui.dataTable.emptyDescription')}
+      />
+    );
   }
 
   return (

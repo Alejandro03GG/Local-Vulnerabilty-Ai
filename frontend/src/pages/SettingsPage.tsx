@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Server, Moon, Monitor, ShieldCheck, Activity } from 'lucide-react';
+import { Server, Moon, Monitor, ShieldCheck, Activity, Languages } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { healthApi } from '@/services/api/health';
+import { LanguageSwitcher, useI18n } from '@/i18n';
 
 export const SettingsPage: React.FC = () => {
+  const { t } = useI18n();
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -25,40 +27,39 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6" data-testid="settings-page">
-      <PageHeader
-        title="Settings & System Diagnostics"
-        subtitle="Frontend client environment, accessibility options, and local API gateway connectivity"
-      />
+      <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Environment & Backend Gateway */}
         <div className="p-5 rounded-lg border border-soc-border bg-soc-surface space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-soc-border">
             <Server className="w-4 h-4 text-blue-400" />
-            <h2 className="text-sm font-semibold text-soc-primary">Backend API Gateway</h2>
+            <h2 className="text-sm font-semibold text-soc-primary">{t('settings.gatewayTitle')}</h2>
           </div>
 
           <div className="space-y-3 text-xs font-mono">
             <div>
-              <span className="text-soc-muted block mb-1">Configured Base URL</span>
+              <span className="text-soc-muted block mb-1">{t('settings.baseUrl')}</span>
               <div className="p-2.5 rounded bg-soc-elevated border border-soc-border text-soc-primary select-all">
                 {apiBaseUrl}
               </div>
             </div>
 
             <div className="pt-2">
-              <span className="text-soc-muted block mb-1">Service Status</span>
+              <span className="text-soc-muted block mb-1">{t('settings.serviceStatus')}</span>
               <div className="flex items-center gap-2 text-soc-primary">
                 {isLoading ? (
-                  <span className="text-soc-muted">Connecting...</span>
+                  <span className="text-soc-muted">{t('settings.connecting')}</span>
                 ) : health ? (
                   <span className="flex items-center gap-1.5 text-emerald-400">
                     <ShieldCheck className="w-4 h-4" />
-                    Operational ({health.version || 'unavailable'}) • DB:{' '}
-                    {health.database || 'Active'}
+                    {t('settings.operational', {
+                      version: health.version || t('settings.versionUnavailable'),
+                      database: health.database || t('settings.dbActive'),
+                    })}
                   </span>
                 ) : (
-                  <span className="text-rose-400">Unreachable</span>
+                  <span className="text-rose-400">{t('settings.unreachable')}</span>
                 )}
               </div>
             </div>
@@ -69,30 +70,43 @@ export const SettingsPage: React.FC = () => {
         <div className="p-5 rounded-lg border border-soc-border bg-soc-surface space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-soc-border">
             <Monitor className="w-4 h-4 text-purple-400" />
-            <h2 className="text-sm font-semibold text-soc-primary">Appearance & Accessibility</h2>
+            <h2 className="text-sm font-semibold text-soc-primary">
+              {t('settings.appearanceTitle')}
+            </h2>
           </div>
 
           <div className="space-y-3 text-xs font-mono">
             <div className="flex items-center justify-between p-2.5 rounded bg-soc-elevated border border-soc-border">
               <div className="flex items-center gap-2">
                 <Moon className="w-4 h-4 text-soc-muted" />
-                <span className="text-soc-primary">Theme Palette</span>
+                <span className="text-soc-primary">{t('settings.themePalette')}</span>
               </div>
-              <span className="text-blue-400 font-semibold">Dark SOC Mode (Default)</span>
+              <span className="text-blue-400 font-semibold">{t('settings.themeValue')}</span>
             </div>
 
             <div className="flex items-center justify-between p-2.5 rounded bg-soc-elevated border border-soc-border">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-soc-muted" />
-                <span className="text-soc-primary">System Reduced Motion</span>
+                <span className="text-soc-primary">{t('settings.reducedMotion')}</span>
               </div>
               <span
                 className={
                   prefersReducedMotion ? 'text-emerald-400 font-semibold' : 'text-soc-muted'
                 }
               >
-                {prefersReducedMotion ? 'Active (Reduced)' : 'Standard Motion'}
+                {prefersReducedMotion ? t('settings.reducedActive') : t('settings.standardMotion')}
               </span>
+            </div>
+
+            <div className="p-2.5 rounded bg-soc-elevated border border-soc-border space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Languages className="w-4 h-4 text-soc-muted" />
+                  <span className="text-soc-primary">{t('settings.languageRow')}</span>
+                </div>
+                <LanguageSwitcher />
+              </div>
+              <p className="text-[11px] text-soc-muted font-sans">{t('settings.languageHint')}</p>
             </div>
           </div>
         </div>

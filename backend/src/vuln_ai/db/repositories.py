@@ -309,6 +309,31 @@ class ComponentRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total
 
+    async def list_paginated(
+        self,
+        project_id: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[ProjectComponentDB], int]:
+        """List components globally or filtered by project."""
+        if project_id is not None:
+            return await self.get_by_project_paginated(project_id, page, page_size)
+
+        offset = (page - 1) * page_size
+        total_res = await self._session.execute(
+            select(func.count()).select_from(ProjectComponentDB)
+        )
+        total = total_res.scalar_one() or 0
+        stmt = (
+            select(ProjectComponentDB)
+            .order_by(ProjectComponentDB.name.asc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all()), total
+
+
 
 class SourceRepository:
     """Data access for vulnerability sources."""
@@ -403,12 +428,18 @@ class VulnerabilityRepository:
         self,
         source_id: str,
         records: list[VulnerabilityRecord],
+        *,
+        prune_missing: bool = False,
     ) -> int:
         """Insert or update canonical vulnerabilities for a source.
 
         Deduplicates against existing vulnerabilities using known identifiers and aliases.
         Preserves canonical UUID identity, updates source records, and idempotently adds ranges.
-        Cleans up obsolete vulnerabilities solely owned by this source if not present in the new set.
+
+        By default this is incremental: existing catalog rows for the source are never deleted
+        just because they are absent from the current batch (partial OSV probes / per-package
+        seeds must not wipe prior ecosystems). Set ``prune_missing=True`` only for full-feed
+        sources that intentionally replace their snapshot (e.g. complete CISA KEV sync).
         """
         touched_vuln_ids: set[str] = set()
 
@@ -629,8 +660,8 @@ class VulnerabilityRepository:
                         )
                     )
 
-        # Cleanup obsolete vulnerabilities solely owned by this source if full batch replaced
-        if records:
+        # Optional full-snapshot prune (disabled by default — H1/H16 safety).
+        if prune_missing and records:
             obsolete_stmt = select(VulnerabilityDB.id).where(
                 VulnerabilityDB.source_id == source_id,
                 VulnerabilityDB.id.not_in(touched_vuln_ids),
@@ -649,16 +680,15 @@ class VulnerabilityRepository:
                         delete(VulnerabilityDB).where(VulnerabilityDB.id == obs_id)
                     )
                 else:
+                    # Keep the canonical row; only detach this source's contribution.
                     await self._session.execute(
                         delete(VulnerabilitySourceRecordDB).where(
                             VulnerabilitySourceRecordDB.vulnerability_id == obs_id,
                             VulnerabilitySourceRecordDB.source_id == source_id,
                         )
                     )
-        elif not records:
-            await self._session.execute(
-                delete(VulnerabilityDB).where(VulnerabilityDB.source_id == source_id)
-            )
+        # Empty batches never wipe the catalog (H2): callers must pass an explicit
+        # full snapshot with prune_missing=True and non-empty records to replace.
 
         await self._session.flush()
         return len(records)

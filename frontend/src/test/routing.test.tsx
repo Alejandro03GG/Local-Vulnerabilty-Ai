@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@/components/ui/Toast';
+import { LanguageProvider } from '@/i18n';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ProjectsPage } from '@/pages/ProjectsPage';
 import { ScansPage } from '@/pages/ScansPage';
@@ -85,15 +86,17 @@ describe('Application Routing and Core Pages (Etapa 10 §10)', () => {
       defaultOptions: { queries: { retry: false } },
     });
     return render(
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <MemoryRouter initialEntries={[initialRoute]}>
-            <Routes>
-              <Route path={path} element={element} />
-            </Routes>
-          </MemoryRouter>
-        </ToastProvider>
-      </QueryClientProvider>,
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <ToastProvider>
+            <MemoryRouter initialEntries={[initialRoute]}>
+              <Routes>
+                <Route path={path} element={element} />
+              </Routes>
+            </MemoryRouter>
+          </ToastProvider>
+        </QueryClientProvider>
+      </LanguageProvider>,
     );
   };
 

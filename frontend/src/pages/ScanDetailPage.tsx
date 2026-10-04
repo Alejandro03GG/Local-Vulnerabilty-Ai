@@ -13,11 +13,23 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { scansApi } from '@/services/api/scans';
 import { policyApi } from '@/services/api/policy';
 import { formatDate, formatDuration } from '@/lib/utils';
+import { useI18n, type MessageKey } from '@/i18n';
+import { vulnerabilityDisplayId } from '@/lib/vulnerabilityId';
 import type { Match } from '@/types';
+import type { PolicyStatus } from '@/services/api/policy';
+
+const POLICY_STATUS_KEYS: Record<PolicyStatus, MessageKey> = {
+  ALLOWED: 'policyStatus.allowed',
+  VIOLATION: 'policyStatus.violation',
+  REQUIRES_REVIEW: 'policyStatus.requiresReview',
+  ACCEPTED_RISK: 'policyStatus.acceptedRisk',
+  SUPPRESSED: 'policyStatus.suppressed',
+};
 
 export const ScanDetailPage: React.FC = () => {
   const { scanId } = useParams<{ scanId: string }>();
   const navigate = useNavigate();
+  const { t, dateLocale } = useI18n();
 
   const handleExport = (format: 'sarif' | 'cyclonedx' | 'spdx') => {
     if (!scanId) return;
@@ -54,14 +66,14 @@ export const ScanDetailPage: React.FC = () => {
   });
 
   if (isLoading) {
-    return <LoadingState message="Retrieving scan execution and match telemetry..." />;
+    return <LoadingState message={t('scanDetail.loading')} />;
   }
 
   if (isError || !scan) {
     return (
       <ErrorState
-        title="Scan Not Found"
-        description="The requested scan execution could not be located."
+        title={t('scanDetail.notFoundTitle')}
+        description={t('scanDetail.notFoundDescription')}
         requestId={(error as { requestId?: string })?.requestId}
         onRetry={() => refetch()}
       />
@@ -73,7 +85,7 @@ export const ScanDetailPage: React.FC = () => {
   const matchColumns: Column<Match>[] = [
     {
       key: 'component',
-      header: 'Component',
+      header: t('scanDetail.cols.component'),
       render: (m) => (
         <span className="font-mono text-xs font-semibold text-soc-primary">
           {m.component?.name || '—'}
@@ -82,7 +94,7 @@ export const ScanDetailPage: React.FC = () => {
     },
     {
       key: 'version',
-      header: 'Installed Version',
+      header: t('scanDetail.cols.installedVersion'),
       render: (m) => (
         <span className="font-mono text-xs text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
           {m.component?.version || '—'}
@@ -91,33 +103,33 @@ export const ScanDetailPage: React.FC = () => {
     },
     {
       key: 'vulnerability',
-      header: 'Vulnerability Advisory',
+      header: t('scanDetail.cols.advisory'),
       render: (m) => (
         <span className="font-mono text-xs font-semibold text-rose-400">
-          {m.vulnerability?.cve_id || m.vulnerability_id.substring(0, 8)}
+          {vulnerabilityDisplayId(m.vulnerability, m.vulnerability_id)}
         </span>
       ),
     },
     {
       key: 'applicability',
-      header: 'Applicability',
+      header: t('scanDetail.cols.applicability'),
       render: (m) => <ApplicabilityBadge status={m.applicability} />,
     },
     {
       key: 'risk',
-      header: 'Risk Level',
+      header: t('scanDetail.cols.risk'),
       render: (m) => <RiskBadge level={m.risk_assessment?.risk_level || 'UNKNOWN'} />,
     },
     {
       key: 'review',
-      header: 'Human Review',
+      header: t('scanDetail.cols.humanReview'),
       render: (m) =>
         m.risk_assessment?.requires_human_review || m.applicability === 'REQUIRES_REVIEW' ? (
           <span className="text-[11px] font-mono text-amber-400 font-semibold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
-            REQUIRED
+            {t('scanDetail.reviewRequired')}
           </span>
         ) : (
-          <span className="text-[11px] font-mono text-soc-muted">None</span>
+          <span className="text-[11px] font-mono text-soc-muted">{t('common.none')}</span>
         ),
     },
   ];
@@ -125,20 +137,20 @@ export const ScanDetailPage: React.FC = () => {
   return (
     <div className="space-y-6" data-testid="scan-detail-page">
       <PageHeader
-        title={`Scan Execution: ${scan.id.substring(0, 8)}`}
-        subtitle={`Associated with Project ${scan.project_id.substring(0, 8)}`}
+        title={t('scanDetail.title', { id: scan.id.substring(0, 8) })}
+        subtitle={t('scanDetail.subtitle', { id: scan.project_id.substring(0, 8) })}
         backTo="/scans"
         badge={<ScanStatusBadge status={scan.status} />}
         actions={
           <div className="flex items-center gap-1.5 bg-soc-surface p-1 rounded-lg border border-soc-border">
             <span className="text-[11px] font-mono text-soc-muted px-2 flex items-center gap-1">
               <Download className="w-3.5 h-3.5 text-soc-secondary" />
-              Export:
+              {t('scanDetail.exportLabel')}
             </span>
             <button
               onClick={() => handleExport('sarif')}
               className="px-2.5 py-1 text-xs font-mono font-medium rounded bg-soc-elevated hover:bg-soc-highlight text-soc-primary border border-soc-border transition-colors hover:text-white"
-              title="Export scan results in OASIS SARIF 2.1.0 format"
+              title={t('scanDetail.exportSarif')}
               data-testid="export-sarif-btn"
             >
               SARIF
@@ -146,7 +158,7 @@ export const ScanDetailPage: React.FC = () => {
             <button
               onClick={() => handleExport('cyclonedx')}
               className="px-2.5 py-1 text-xs font-mono font-medium rounded bg-soc-elevated hover:bg-soc-highlight text-soc-primary border border-soc-border transition-colors hover:text-white"
-              title="Export software bill of materials in CycloneDX 1.5 JSON format"
+              title={t('scanDetail.exportCycloneDx')}
               data-testid="export-cyclonedx-btn"
             >
               CycloneDX
@@ -154,7 +166,7 @@ export const ScanDetailPage: React.FC = () => {
             <button
               onClick={() => handleExport('spdx')}
               className="px-2.5 py-1 text-xs font-mono font-medium rounded bg-soc-elevated hover:bg-soc-highlight text-soc-primary border border-soc-border transition-colors hover:text-white"
-              title="Export software bill of materials in SPDX 2.3 JSON format"
+              title={t('scanDetail.exportSpdx')}
               data-testid="export-spdx-btn"
             >
               SPDX
@@ -166,7 +178,7 @@ export const ScanDetailPage: React.FC = () => {
       {/* Error banner if scan failed */}
       {scan.error && (
         <div className="p-4 rounded-lg bg-rose-950/20 border border-rose-500/30 text-rose-300 text-xs font-mono">
-          <strong className="block mb-1">SCAN EXECUTION ERROR</strong>
+          <strong className="block mb-1">{t('scanDetail.errorBanner')}</strong>
           {scan.error}
         </div>
       )}
@@ -181,7 +193,7 @@ export const ScanDetailPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-soc-muted">
-                  Policy & Compliance
+                  {t('scanDetail.policyTitle')}
                 </span>
                 <span
                   className={`text-xs font-mono font-bold px-2 py-0.5 rounded border uppercase ${
@@ -194,7 +206,9 @@ export const ScanDetailPage: React.FC = () => {
                           : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                   }`}
                 >
-                  {policyEval.status}
+                  {POLICY_STATUS_KEYS[policyEval.status]
+                    ? t(POLICY_STATUS_KEYS[policyEval.status])
+                    : policyEval.status}
                 </span>
                 <span
                   className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
@@ -203,30 +217,35 @@ export const ScanDetailPage: React.FC = () => {
                       : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                   }`}
                 >
-                  CI EXIT {policyEval.ci_exit_code} (
-                  {policyEval.ci_exit_code === 0 ? 'PASS' : 'FAIL'})
+                  {t('scanDetail.ciExit', {
+                    code: policyEval.ci_exit_code,
+                    result:
+                      policyEval.ci_exit_code === 0
+                        ? t('scanDetail.ciPass')
+                        : t('scanDetail.ciFail'),
+                  })}
                 </span>
               </div>
               <p className="text-xs text-soc-secondary mt-1">
-                Evaluated against policy{' '}
+                {t('scanDetail.evaluatedAgainst')}{' '}
                 <strong className="text-soc-primary font-mono">{policyEval.policy_name}</strong>
               </p>
             </div>
             <div className="flex items-center gap-4 text-xs font-mono">
               <div>
-                <span className="text-soc-muted">Violations: </span>
+                <span className="text-soc-muted">{t('scanDetail.violations')}</span>
                 <span className="text-rose-400 font-bold">{policyEval.violations_count}</span>
               </div>
               <div>
-                <span className="text-soc-muted">Suppressed: </span>
+                <span className="text-soc-muted">{t('scanDetail.suppressed')}</span>
                 <span className="text-cyan-400 font-bold">{policyEval.suppressed_count}</span>
               </div>
               <div>
-                <span className="text-soc-muted">Requires Review: </span>
+                <span className="text-soc-muted">{t('scanDetail.requiresReview')}</span>
                 <span className="text-amber-400 font-bold">{policyEval.requires_review_count}</span>
               </div>
               <div>
-                <span className="text-soc-muted">Allowed: </span>
+                <span className="text-soc-muted">{t('scanDetail.allowed')}</span>
                 <span className="text-emerald-400 font-bold">{policyEval.allowed_count}</span>
               </div>
             </div>
@@ -236,7 +255,7 @@ export const ScanDetailPage: React.FC = () => {
           {policyEval.violations && policyEval.violations.length > 0 && (
             <div className="space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400 block">
-                Policy Violations ({policyEval.violations.length})
+                {t('scanDetail.policyViolations', { count: policyEval.violations.length })}
               </span>
               <div className="border border-rose-500/20 rounded-md overflow-hidden bg-rose-950/10 divide-y divide-rose-500/10 text-xs font-mono">
                 {policyEval.violations.map((v, i) => (
@@ -249,7 +268,9 @@ export const ScanDetailPage: React.FC = () => {
                       <div className="text-[11px] text-soc-secondary mt-0.5">{v.reason}</div>
                     </div>
                     <div className="text-right text-[10px] text-amber-400">
-                      Rules: {v.matched_rules?.join(', ') || 'threshold'}
+                      {t('scanDetail.rules', {
+                        rules: v.matched_rules?.join(', ') || t('scanDetail.thresholdRule'),
+                      })}
                     </div>
                   </div>
                 ))}
@@ -261,7 +282,9 @@ export const ScanDetailPage: React.FC = () => {
           {policyEval.suppressions_applied && policyEval.suppressions_applied.length > 0 && (
             <div className="space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 block">
-                Applied Suppressions ({policyEval.suppressions_applied.length})
+                {t('scanDetail.appliedSuppressions', {
+                  count: policyEval.suppressions_applied.length,
+                })}
               </span>
               <div className="border border-cyan-500/20 rounded-md overflow-hidden bg-cyan-950/10 divide-y divide-cyan-500/10 text-xs font-mono">
                 {policyEval.suppressions_applied.map((s, i) => (
@@ -273,8 +296,10 @@ export const ScanDetailPage: React.FC = () => {
                       <span className="text-soc-secondary ml-2">{String(s.reason || '')}</span>
                     </div>
                     <div className="text-right text-[10px] text-soc-muted">
-                      Owner: {String(s.owner || 'system')} | Expires:{' '}
-                      {String(s.expires_at || 'NEVER')}
+                      {t('scanDetail.suppressionMeta', {
+                        owner: String(s.owner || t('scanDetail.systemOwner')),
+                        expires: String(s.expires_at || t('scanDetail.neverExpires')),
+                      })}
                     </div>
                   </div>
                 ))}
@@ -287,30 +312,30 @@ export const ScanDetailPage: React.FC = () => {
       {/* Metrics breakdown */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <Metric
-          label="Execution Time"
+          label={t('scanDetail.metrics.executionTime')}
           value={formatDuration(scan.duration_seconds)}
-          subtext={formatDate(scan.started_at)}
+          subtext={formatDate(scan.started_at, dateLocale)}
         />
         <Metric
-          label="Dependencies Found"
+          label={t('scanDetail.metrics.dependencies')}
           value={scan.components_found}
-          subtext="Scanned manifests"
+          subtext={t('scanDetail.metrics.dependenciesHint')}
         />
         <Metric
-          label="Matches Correlated"
+          label={t('scanDetail.metrics.matches')}
           value={scan.vulnerabilities_found}
-          subtext="Advisories evaluated"
+          subtext={t('scanDetail.metrics.matchesHint')}
         />
         <Metric
-          label="KEV Exploits"
+          label={t('scanDetail.metrics.kev')}
           value={scan.kev_matches}
-          subtext="Known in wild"
+          subtext={t('scanDetail.metrics.kevHint')}
           variant={scan.kev_matches > 0 ? 'critical' : 'default'}
         />
         <Metric
-          label="Requires Review"
+          label={t('scanDetail.metrics.review')}
           value={scan.summary?.requires_review ?? 0}
-          subtext="Discrepancies / AI flag"
+          subtext={t('scanDetail.metrics.reviewHint')}
           variant={(scan.summary?.requires_review ?? 0) > 0 ? 'warning' : 'default'}
         />
       </div>
@@ -318,12 +343,8 @@ export const ScanDetailPage: React.FC = () => {
       {/* Matches List */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-soc-primary">
-            Correlated Vulnerability Matches
-          </h2>
-          <span className="text-xs font-mono text-soc-muted">
-            Click any row to open Deep Intelligence & Audit Trace
-          </span>
+          <h2 className="text-sm font-semibold text-soc-primary">{t('scanDetail.matchesTitle')}</h2>
+          <span className="text-xs font-mono text-soc-muted">{t('scanDetail.matchesHint')}</span>
         </div>
 
         <DataTable
@@ -331,8 +352,8 @@ export const ScanDetailPage: React.FC = () => {
           data={matches}
           keyExtractor={(m) => m.id}
           isLoading={false}
-          emptyTitle="No vulnerability matches detected"
-          emptyDescription="None of the detected project dependencies matched known vulnerability version ranges."
+          emptyTitle={t('scanDetail.emptyTitle')}
+          emptyDescription={t('scanDetail.emptyDescription')}
           onRowClick={(m) => navigate(`/matches/${m.id}`)}
         />
       </div>

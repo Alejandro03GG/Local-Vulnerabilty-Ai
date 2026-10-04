@@ -75,3 +75,6 @@ Operations that require network (unless cached locally):
 - `vuln-ai sources sync` (OSV / NVD / CISA KEV)
 - Optional Ollama calls when AI is enabled (localhost only)
 
+## Stage 19.1
+
+Hardening changes do not alter the local-first privacy model: source code is not sent to remote LLMs; AI remains optional; policy decisions remain deterministic.

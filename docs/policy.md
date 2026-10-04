@@ -120,3 +120,32 @@ If two matching rules have different priorities, the lower integer priority eval
 - **No Extra Fields**: Unknown configuration keys trigger immediate `PolicyValidationError`.
 - **Duplicate ID Enforcement**: Duplicate rule IDs within the same document are rejected.
 - **Strict Canonical Terminology**: Non-canonical statuses (such as `VULNERABLE`) are rejected by schema validators.
+
+## Inline Suppressions in Policy YAML
+
+Every suppression **must** include `reason`, `owner`, and `reference` (audit fields). Copy-paste examples without these fields are invalid.
+
+```yaml
+version: "1"
+policy:
+  name: "enterprise-baseline-policy"
+  description: "Organizational zero-trust baseline policy"
+  thresholds:
+    fail_on:
+      - "CRITICAL"
+      - "HIGH"
+    fail_on_review: true
+  rules: []
+  suppressions:
+    - id: "SUP-001"
+      match_criteria:
+        vulnerability_id: "CVE-2023-32681"
+      reason: "Vendor patch scheduled next sprint"
+      owner: "sec-team@example.com"
+      reference: "SEC-2026-0042"
+      expires_at: "2027-12-31T23:59:59Z"
+  default_action: "ALLOW"
+```
+
+See also [Suppressions](suppressions.md).
+

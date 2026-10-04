@@ -17,7 +17,7 @@ from vuln_ai.config import Settings
 
 def test_build_scanner_registry():
     registry = build_scanner_registry()
-    assert len(registry) == 5
+    assert len(registry) == 6
 
 
 def test_build_source_registry():

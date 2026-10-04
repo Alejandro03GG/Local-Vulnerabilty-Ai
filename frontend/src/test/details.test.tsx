@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@/components/ui/Toast';
+import { LanguageProvider } from '@/i18n';
 import { ProjectDetailPage } from '@/pages/ProjectDetailPage';
 import { ScanDetailPage } from '@/pages/ScanDetailPage';
 import { VulnerabilityDetailPage } from '@/pages/VulnerabilityDetailPage';
@@ -22,15 +23,17 @@ describe('Detail Views (Etapa 10)', () => {
       defaultOptions: { queries: { retry: false } },
     });
     return render(
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <MemoryRouter initialEntries={[initialRoute]}>
-            <Routes>
-              <Route path={path} element={element} />
-            </Routes>
-          </MemoryRouter>
-        </ToastProvider>
-      </QueryClientProvider>,
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <ToastProvider>
+            <MemoryRouter initialEntries={[initialRoute]}>
+              <Routes>
+                <Route path={path} element={element} />
+              </Routes>
+            </MemoryRouter>
+          </ToastProvider>
+        </QueryClientProvider>
+      </LanguageProvider>,
     );
   };
 

@@ -10,10 +10,13 @@ import { ReviewBadge } from '@/components/badges/ReviewBadge';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { matchesApi } from '@/services/api/matches';
 import { formatDate } from '@/lib/utils';
+import { useI18n } from '@/i18n';
+import { vulnerabilityDisplayId } from '@/lib/vulnerabilityId';
 import type { Match, ApplicabilityType } from '@/types';
 
 export const MatchesPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, dateLocale } = useI18n();
   const [page] = useState(1);
   const [selectedApplicability, setSelectedApplicability] = useState<string>('');
 
@@ -25,7 +28,7 @@ export const MatchesPage: React.FC = () => {
   const columns: Column<Match>[] = [
     {
       key: 'component',
-      header: 'Component Package',
+      header: t('matches.cols.package'),
       sortable: true,
       render: (m) => (
         <div className="flex items-center gap-2">
@@ -38,7 +41,7 @@ export const MatchesPage: React.FC = () => {
     },
     {
       key: 'version',
-      header: 'Installed Version',
+      header: t('matches.cols.installedVersion'),
       render: (m) => (
         <span className="font-mono text-xs text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
           {m.component?.version || '—'}
@@ -47,28 +50,28 @@ export const MatchesPage: React.FC = () => {
     },
     {
       key: 'vulnerability',
-      header: 'Vulnerability (CVE)',
+      header: t('matches.cols.vulnerability'),
       render: (m) => (
         <span className="font-mono text-xs font-semibold text-rose-400">
-          {m.vulnerability?.cve_id || m.vulnerability_id.substring(0, 8)}
+          {vulnerabilityDisplayId(m.vulnerability, m.vulnerability_id)}
         </span>
       ),
     },
     {
       key: 'applicability',
-      header: 'Applicability Verdict',
+      header: t('matches.cols.verdict'),
       sortable: true,
       render: (m) => <ApplicabilityBadge status={m.applicability} />,
     },
     {
       key: 'risk',
-      header: 'Risk Posture',
+      header: t('matches.cols.risk'),
       sortable: true,
       render: (m) => <RiskBadge level={m.risk_assessment?.risk_level || 'UNKNOWN'} />,
     },
     {
       key: 'review',
-      header: 'Triage Status',
+      header: t('matches.cols.triage'),
       render: (m) => (
         <ReviewBadge
           requiresReview={
@@ -80,17 +83,19 @@ export const MatchesPage: React.FC = () => {
     },
     {
       key: 'matched_at',
-      header: 'Correlated At',
+      header: t('matches.cols.correlatedAt'),
       sortable: true,
-      render: (m) => <span className="font-mono text-xs">{formatDate(m.matched_at)}</span>,
+      render: (m) => (
+        <span className="font-mono text-xs">{formatDate(m.matched_at, dateLocale)}</span>
+      ),
     },
   ];
 
   if (isError) {
     return (
       <ErrorState
-        title="Failed to Load Matches"
-        description="Could not query vulnerability correlations from the engine database."
+        title={t('matches.errorTitle')}
+        description={t('matches.errorDescription')}
         requestId={(error as { requestId?: string })?.requestId}
         onRetry={() => refetch()}
       />
@@ -98,19 +103,19 @@ export const MatchesPage: React.FC = () => {
   }
 
   const applicabilityOptions: { label: string; value: ApplicabilityType | '' }[] = [
-    { label: 'All Applicability Verdicts', value: '' },
-    { label: 'LIKELY_AFFECTED', value: 'LIKELY_AFFECTED' },
-    { label: 'LIKELY_NOT_AFFECTED', value: 'LIKELY_NOT_AFFECTED' },
-    { label: 'REQUIRES_REVIEW', value: 'REQUIRES_REVIEW' },
-    { label: 'DETECTED', value: 'DETECTED' },
-    { label: 'UNKNOWN', value: 'UNKNOWN' },
+    { label: t('matches.filterAll'), value: '' },
+    { label: t('badges.applicability.likelyAffected'), value: 'LIKELY_AFFECTED' },
+    { label: t('badges.applicability.likelyNotAffected'), value: 'LIKELY_NOT_AFFECTED' },
+    { label: t('badges.applicability.requiresReview'), value: 'REQUIRES_REVIEW' },
+    { label: t('badges.applicability.detected'), value: 'DETECTED' },
+    { label: t('badges.applicability.unknown'), value: 'UNKNOWN' },
   ];
 
   return (
     <div className="space-y-6" data-testid="matches-page">
       <PageHeader
-        title="Vulnerability Matches & Correlations"
-        subtitle="Correlated findings between project dependencies and authoritative vulnerability advisories"
+        title={t('matches.title')}
+        subtitle={t('matches.subtitle')}
         actions={
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-soc-muted" />
@@ -118,7 +123,7 @@ export const MatchesPage: React.FC = () => {
               value={selectedApplicability}
               onChange={(e) => setSelectedApplicability(e.target.value)}
               className="px-3 py-1.5 text-xs font-mono rounded bg-soc-elevated border border-soc-border text-soc-primary focus:outline-none focus:border-blue-500"
-              aria-label="Filter matches by applicability"
+              aria-label={t('matches.filterLabel')}
             >
               {applicabilityOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -135,8 +140,8 @@ export const MatchesPage: React.FC = () => {
         data={data?.items ?? []}
         keyExtractor={(m) => m.id}
         isLoading={isLoading}
-        emptyTitle="No vulnerability matches found"
-        emptyDescription="No dependencies matched the selected filters or no scans have detected matches yet."
+        emptyTitle={t('matches.emptyTitle')}
+        emptyDescription={t('matches.emptyDescription')}
         onRowClick={(m) => navigate(`/matches/${m.id}`)}
       />
     </div>

@@ -83,23 +83,29 @@ def extract_package_installs(cmd: str, line_no: int, stage_name: str) -> list[di
     )
     for m in apt_matches:
         tokens = m.group(1).split()
-        packages = [
-            t
-            for t in tokens
-            if not t.startswith("-")
-            and "=" not in t
-            and t not in ("--no-install-recommends", "-y")
-        ]
+        packages: list[str] = []
+        pinned: list[dict[str, str]] = []
+        for t in tokens:
+            if t.startswith("-") or t in ("--no-install-recommends", "-y"):
+                continue
+            if "=" in t:
+                name, ver = t.split("=", 1)
+                if name:
+                    packages.append(name)
+                    pinned.append({"name": name, "version": ver})
+            else:
+                packages.append(t)
         if packages:
-            installs.append(
-                {
-                    "manager": "apt",
-                    "packages": packages,
-                    "stage": stage_name,
-                    "line": line_no,
-                    "raw_command": cmd.strip(),
-                }
-            )
+            entry: dict[str, Any] = {
+                "manager": "apt",
+                "packages": packages,
+                "stage": stage_name,
+                "line": line_no,
+                "raw_command": cmd.strip(),
+            }
+            if pinned:
+                entry["pinned"] = pinned
+            installs.append(entry)
 
     # APK
     apk_matches = re.finditer(r"apk\s+add\s+([^;&|]+)", cmd, re.IGNORECASE)

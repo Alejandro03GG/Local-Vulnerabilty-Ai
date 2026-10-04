@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Ban, Clock, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Search } from 'lucide-react';
+import { useI18n } from '@/i18n';
 import { policyApi, type Suppression, type SuppressionStatus } from '@/services/api/policy';
 
 export const SuppressionsPage: React.FC = () => {
+  const { t, dateLocale } = useI18n();
   const [suppressions, setSuppressions] = useState<Suppression[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<SuppressionStatus | 'ALL'>('ALL');
@@ -80,6 +82,19 @@ export const SuppressionsPage: React.FC = () => {
     );
   });
 
+  const statusLabels: Record<SuppressionStatus, string> = {
+    ACTIVE: t('suppressions.status.active'),
+    EXPIRED: t('suppressions.status.expired'),
+    DISABLED: t('suppressions.status.disabled'),
+  };
+
+  const statusTabLabels: Record<SuppressionStatus | 'ALL', string> = {
+    ALL: t('suppressions.tabAll'),
+    ACTIVE: t('suppressions.tabActive'),
+    EXPIRED: t('suppressions.tabExpired'),
+    DISABLED: t('suppressions.tabDisabled'),
+  };
+
   const activeCount = suppressions.filter((s) => s.status === 'ACTIVE').length;
   const expiredCount = suppressions.filter((s) => s.status === 'EXPIRED').length;
   const disabledCount = suppressions.filter((s) => s.status === 'DISABLED').length;
@@ -91,12 +106,9 @@ export const SuppressionsPage: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold tracking-tight text-soc-primary flex items-center gap-2">
             <Ban className="w-5 h-5 text-cyan-400" />
-            Vulnerability Suppressions & Exceptions
+            {t('suppressions.title')}
           </h1>
-          <p className="text-xs text-soc-secondary mt-1">
-            Auditable security exceptions. Active suppressions exempt findings from policy failure;
-            expired suppressions trigger build failures.
-          </p>
+          <p className="text-xs text-soc-secondary mt-1">{t('suppressions.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -104,7 +116,7 @@ export const SuppressionsPage: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-soc-secondary hover:text-soc-primary bg-soc-surface border border-soc-border rounded-md hover:bg-soc-elevated transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('suppressions.refresh')}
           </button>
         </div>
       </div>
@@ -113,10 +125,12 @@ export const SuppressionsPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-soc-surface border border-soc-border rounded-lg p-4 flex items-center justify-between">
           <div>
-            <div className="text-[10px] uppercase font-mono text-soc-muted">Active Exceptions</div>
+            <div className="text-[10px] uppercase font-mono text-soc-muted">
+              {t('suppressions.kpiActive')}
+            </div>
             <div className="text-2xl font-bold text-emerald-400 mt-1">{activeCount}</div>
             <div className="text-[10px] text-soc-secondary mt-0.5">
-              Exempt from CI policy failure
+              {t('suppressions.kpiActiveHint')}
             </div>
           </div>
           <CheckCircle2 className="w-8 h-8 text-emerald-500/20" />
@@ -125,11 +139,11 @@ export const SuppressionsPage: React.FC = () => {
         <div className="bg-soc-surface border border-soc-border rounded-lg p-4 flex items-center justify-between">
           <div>
             <div className="text-[10px] uppercase font-mono text-soc-muted">
-              Expired Suppressions
+              {t('suppressions.kpiExpired')}
             </div>
             <div className="text-2xl font-bold text-amber-400 mt-1">{expiredCount}</div>
             <div className="text-[10px] text-amber-400/80 mt-0.5">
-              Will fail CI scans until renewed
+              {t('suppressions.kpiExpiredHint')}
             </div>
           </div>
           <AlertTriangle className="w-8 h-8 text-amber-500/20" />
@@ -138,11 +152,11 @@ export const SuppressionsPage: React.FC = () => {
         <div className="bg-soc-surface border border-soc-border rounded-lg p-4 flex items-center justify-between">
           <div>
             <div className="text-[10px] uppercase font-mono text-soc-muted">
-              Disabled / Inactive
+              {t('suppressions.kpiDisabled')}
             </div>
             <div className="text-2xl font-bold text-zinc-400 mt-1">{disabledCount}</div>
             <div className="text-[10px] text-soc-secondary mt-0.5">
-              Explicitly disabled by owner
+              {t('suppressions.kpiDisabledHint')}
             </div>
           </div>
           <XCircle className="w-8 h-8 text-zinc-500/20" />
@@ -163,7 +177,7 @@ export const SuppressionsPage: React.FC = () => {
                   : 'text-soc-muted hover:text-soc-secondary'
               }`}
             >
-              {st}
+              {statusTabLabels[st]}
             </button>
           ))}
         </div>
@@ -173,7 +187,7 @@ export const SuppressionsPage: React.FC = () => {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-soc-muted" />
           <input
             type="text"
-            placeholder="Search CVE, package, owner, reason..."
+            placeholder={t('suppressions.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-1.5 text-xs bg-soc-surface border border-soc-border rounded-md text-soc-primary focus:outline-none focus:border-blue-500"
@@ -187,11 +201,11 @@ export const SuppressionsPage: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-soc-elevated/40 border-b border-soc-border text-soc-muted font-mono uppercase text-[10px]">
               <tr>
-                <th className="py-2.5 px-4">Status</th>
-                <th className="py-2.5 px-4">Target Criteria</th>
-                <th className="py-2.5 px-4">Reason & Justification</th>
-                <th className="py-2.5 px-4">Owner & Ref</th>
-                <th className="py-2.5 px-4">Expiration</th>
+                <th className="py-2.5 px-4">{t('suppressions.cols.status')}</th>
+                <th className="py-2.5 px-4">{t('suppressions.cols.target')}</th>
+                <th className="py-2.5 px-4">{t('suppressions.cols.reason')}</th>
+                <th className="py-2.5 px-4">{t('suppressions.cols.owner')}</th>
+                <th className="py-2.5 px-4">{t('suppressions.cols.expiration')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-soc-border/60">
@@ -214,23 +228,23 @@ export const SuppressionsPage: React.FC = () => {
                           {s.status === 'ACTIVE' && <CheckCircle2 className="w-3 h-3" />}
                           {s.status === 'EXPIRED' && <AlertTriangle className="w-3 h-3" />}
                           {s.status === 'DISABLED' && <XCircle className="w-3 h-3" />}
-                          {s.status}
+                          {statusLabels[s.status]}
                         </span>
                       </td>
 
                       <td className="py-3 px-4 font-mono">
                         <div className="font-bold text-soc-primary">
-                          {crit.vulnerability_id || 'Any CVE'}
+                          {crit.vulnerability_id || t('suppressions.anyCve')}
                         </div>
                         <div className="text-[11px] text-soc-secondary">
                           {crit.package_name ? (
                             <span>
                               {crit.package_name}{' '}
                               {crit.package_version ? `@ ${crit.package_version}` : ''} (
-                              {crit.ecosystem || 'any'})
+                              {crit.ecosystem || t('suppressions.anyEcosystem')})
                             </span>
                           ) : (
-                            <span className="text-soc-muted">Universal match</span>
+                            <span className="text-soc-muted">{t('suppressions.universal')}</span>
                           )}
                         </div>
                       </td>
@@ -250,10 +264,10 @@ export const SuppressionsPage: React.FC = () => {
                             className={`flex items-center gap-1 ${isExpired ? 'text-amber-400 font-bold' : 'text-soc-secondary'}`}
                           >
                             <Clock className="w-3 h-3" />
-                            {new Date(s.expires_at).toLocaleDateString()}
+                            {new Date(s.expires_at).toLocaleDateString(dateLocale)}
                           </div>
                         ) : (
-                          <span className="text-soc-muted">Never (Permanent)</span>
+                          <span className="text-soc-muted">{t('suppressions.never')}</span>
                         )}
                       </td>
                     </tr>
@@ -262,7 +276,7 @@ export const SuppressionsPage: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-soc-muted text-xs">
-                    No suppressions found matching current filter.
+                    {t('suppressions.empty')}
                   </td>
                 </tr>
               )}

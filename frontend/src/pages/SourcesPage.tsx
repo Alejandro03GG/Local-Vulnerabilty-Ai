@@ -8,10 +8,12 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { useToast } from '@/hooks/useToast';
 import { sourcesApi } from '@/services/api/sources';
 import { formatDate } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { Source } from '@/types';
 
 export const SourcesPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { t, dateLocale } = useI18n();
   const { showToast } = useToast();
   const [syncingSourceId, setSyncingSourceId] = useState<string | null>(null);
 
@@ -38,32 +40,35 @@ export const SourcesPage: React.FC = () => {
       if (result.success) {
         showToast(
           'success',
-          'Sync Completed',
-          `Processed ${result.records_processed.toLocaleString()} records from ${result.source_name}.`,
+          t('sources.syncCompleted'),
+          t('sources.syncCompletedDescription', {
+            count: result.records_processed.toLocaleString(dateLocale),
+            source: result.source_name,
+          }),
         );
       } else {
         showToast(
           'error',
-          'Sync Failed',
-          result.error_message || 'Could not complete synchronization.',
+          t('sources.syncFailed'),
+          result.error_message || t('sources.syncFailedFallback'),
         );
       }
     },
     onError: (err: { message: string }) => {
       setSyncingSourceId(null);
-      showToast('error', 'Sync request failed', err.message);
+      showToast('error', t('sources.syncRequestFailed'), err.message);
     },
   });
 
   if (isLoading) {
-    return <LoadingState message="Fetching intelligence sources configuration..." />;
+    return <LoadingState message={t('sources.loading')} />;
   }
 
   if (isError) {
     return (
       <ErrorState
-        title="Failed to Load Sources"
-        description="Could not query vulnerability source providers."
+        title={t('sources.errorTitle')}
+        description={t('sources.errorDescription')}
         requestId={(error as { requestId?: string })?.requestId}
         onRetry={() => refetch()}
       />
@@ -72,10 +77,7 @@ export const SourcesPage: React.FC = () => {
 
   return (
     <div className="space-y-6" data-testid="sources-page">
-      <PageHeader
-        title="Vulnerability Intelligence Sources"
-        subtitle="Manage and synchronize upstream vulnerability data providers: OSV, NVD, and CISA KEV"
-      />
+      <PageHeader title={t('sources.title')} subtitle={t('sources.subtitle')} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {sources && sources.length > 0 ? (
@@ -99,18 +101,20 @@ export const SourcesPage: React.FC = () => {
 
                   <div className="space-y-2 text-xs font-mono text-soc-secondary">
                     <div className="flex justify-between py-1 border-b border-soc-border/50">
-                      <span className="text-soc-muted">Type:</span>
+                      <span className="text-soc-muted">{t('sources.type')}</span>
                       <span className="text-soc-primary uppercase">{src.source_type}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-soc-border/50">
-                      <span className="text-soc-muted">Cached Advisories:</span>
+                      <span className="text-soc-muted">{t('sources.cachedAdvisories')}</span>
                       <span className="text-soc-primary font-bold">
-                        {src.record_count.toLocaleString()}
+                        {src.record_count.toLocaleString(dateLocale)}
                       </span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-soc-border/50">
-                      <span className="text-soc-muted">Last Synchronized:</span>
-                      <span className="text-soc-primary">{formatDate(src.last_sync)}</span>
+                      <span className="text-soc-muted">{t('sources.lastSynchronized')}</span>
+                      <span className="text-soc-primary">
+                        {formatDate(src.last_sync, dateLocale)}
+                      </span>
                     </div>
                   </div>
 
@@ -132,7 +136,7 @@ export const SourcesPage: React.FC = () => {
                         isSyncing ? 'w-3.5 h-3.5 animate-spin text-blue-400' : 'w-3.5 h-3.5'
                       }
                     />
-                    <span>{isSyncing ? 'Synchronizing Catalog...' : 'Trigger Sync'}</span>
+                    <span>{isSyncing ? t('sources.synchronizing') : t('sources.triggerSync')}</span>
                   </button>
                 </div>
               </div>
@@ -140,7 +144,7 @@ export const SourcesPage: React.FC = () => {
           })
         ) : (
           <div className="col-span-3 text-center py-12 border border-dashed border-soc-border rounded-lg text-soc-muted text-xs font-mono">
-            No intelligence sources registered in database.
+            {t('sources.empty')}
           </div>
         )}
       </div>

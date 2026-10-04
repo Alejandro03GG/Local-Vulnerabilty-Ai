@@ -22,6 +22,7 @@ from vuln_ai.scanners import (
     PoetryLockScanner,
     PythonScanner,
     ScannerRegistry,
+    UvLockScanner,
 )
 from vuln_ai.sources.cisa_kev import CISAKEVSource
 from vuln_ai.sources.nvd import NVDSource
@@ -36,6 +37,7 @@ def build_scanner_registry() -> ScannerRegistry:
     registry = ScannerRegistry()
     registry.register(PythonScanner())
     registry.register(PoetryLockScanner())
+    registry.register(UvLockScanner())
     registry.register(NpmLockScanner())
     registry.register(PnpmLockScanner())
     registry.register(CargoLockScanner())

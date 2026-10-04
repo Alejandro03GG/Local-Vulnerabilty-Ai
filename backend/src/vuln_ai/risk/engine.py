@@ -220,7 +220,8 @@ class DeterministicRiskEngine:
             status = RiskStatus.LIKELY_NOT_AFFECTED
             requires_human_review = False
             certainty = 0.90
-            risk_level = RiskLevel.LOW
+            # Not technically applicable: do not inflate LOW risk metrics (H10).
+            risk_level = RiskLevel.UNKNOWN
 
         # Case 3: Range-confirmed applicability (installed version within affected range)
         elif match.applicability == Applicability.LIKELY_AFFECTED:
@@ -257,7 +258,7 @@ class DeterministicRiskEngine:
             status = RiskStatus.LIKELY_NOT_AFFECTED
             requires_human_review = False
             certainty = round(0.70 + (0.25 - applicability_prob), 2)
-            risk_level = RiskLevel.LOW
+            risk_level = RiskLevel.UNKNOWN
 
         elif applicability_prob is not None and applicability_prob >= 0.75 and has_version:
             status = RiskStatus.LIKELY_AFFECTED

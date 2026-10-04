@@ -547,3 +547,10 @@ vuln-ai image scan /path/to/Dockerfile --format json
 
 > Inventory/detail of previously scanned images is available via the API (`GET /api/v1/images`) and the frontend **Container Images** page. Dedicated `image list` / `image info` CLI subcommands are reserved as future work.
 
+## Stage 19.1 CLI notes
+
+- `vuln-ai scan <path>` discovers manifests in monorepo subdirectories (safe exclusions apply).
+- Supported Python lockfiles include `requirements.txt`, `poetry.lock`, and `uv.lock`.
+- npm ecosystems: `package-lock.json` and multi-document `pnpm-lock.yaml`.
+- When using `-o/--output`, machine-readable exports are written to the file only; stdout stays operational (H15).
+- `vuln-ai image scan Dockerfile` persists the static AST when the local DB is initialized.

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Flame, AlertOctagon, AlertTriangle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { RiskLevel } from '@/types';
 
 interface RiskBadgeProps {
@@ -9,6 +10,7 @@ interface RiskBadgeProps {
 }
 
 export const RiskBadge: React.FC<RiskBadgeProps> = ({ level, className }) => {
+  const { t } = useI18n();
   const normLevel = level ? level.toUpperCase() : 'UNKNOWN';
 
   switch (normLevel) {
@@ -23,7 +25,7 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ level, className }) => {
           data-testid="badge-risk-critical"
         >
           <Flame className="w-3.5 h-3.5 shrink-0 text-red-400" aria-hidden="true" />
-          <span>CRITICAL</span>
+          <span>{t('badges.risk.critical')}</span>
         </span>
       );
 
@@ -38,7 +40,7 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ level, className }) => {
           data-testid="badge-risk-high"
         >
           <AlertOctagon className="w-3.5 h-3.5 shrink-0 text-orange-400" aria-hidden="true" />
-          <span>HIGH</span>
+          <span>{t('badges.risk.high')}</span>
         </span>
       );
 
@@ -53,7 +55,7 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ level, className }) => {
           data-testid="badge-risk-medium"
         >
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-400" aria-hidden="true" />
-          <span>MEDIUM</span>
+          <span>{t('badges.risk.medium')}</span>
         </span>
       );
 
@@ -68,7 +70,7 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ level, className }) => {
           data-testid="badge-risk-low"
         >
           <Info className="w-3.5 h-3.5 shrink-0 text-blue-400" aria-hidden="true" />
-          <span>LOW</span>
+          <span>{t('badges.risk.low')}</span>
         </span>
       );
 
@@ -83,7 +85,7 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ level, className }) => {
           data-testid="badge-risk-unknown"
         >
           <Info className="w-3.5 h-3.5 shrink-0 text-slate-400" aria-hidden="true" />
-          <span>{normLevel}</span>
+          <span>{normLevel === 'UNKNOWN' ? t('badges.risk.unknown') : normLevel}</span>
         </span>
       );
   }

@@ -6,9 +6,11 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { componentsApi } from '@/services/api/components';
 import { formatDate } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { DetectedComponent } from '@/types';
 
 export const ComponentsPage: React.FC = () => {
+  const { t, dateLocale } = useI18n();
   const [page] = useState(1);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -19,7 +21,7 @@ export const ComponentsPage: React.FC = () => {
   const columns: Column<DetectedComponent>[] = [
     {
       key: 'name',
-      header: 'Component Package',
+      header: t('components.cols.package'),
       sortable: true,
       render: (c) => (
         <div className="flex items-center gap-2">
@@ -30,7 +32,7 @@ export const ComponentsPage: React.FC = () => {
     },
     {
       key: 'version',
-      header: 'Installed Version',
+      header: t('components.cols.installedVersion'),
       sortable: true,
       render: (c) => (
         <span className="font-mono text-xs text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
@@ -40,7 +42,7 @@ export const ComponentsPage: React.FC = () => {
     },
     {
       key: 'ecosystem',
-      header: 'Ecosystem',
+      header: t('components.cols.ecosystem'),
       sortable: true,
       render: (c) => (
         <span className="font-mono text-xs uppercase text-soc-secondary">{c.ecosystem}</span>
@@ -48,7 +50,7 @@ export const ComponentsPage: React.FC = () => {
     },
     {
       key: 'dependency_type',
-      header: 'Dependency Type',
+      header: t('components.cols.dependencyType'),
       sortable: true,
       render: (c) => {
         const isDirect = c.is_direct ?? c.dependency_type === 'direct';
@@ -61,14 +63,14 @@ export const ComponentsPage: React.FC = () => {
                   : 'text-purple-400 bg-purple-500/10 border-purple-500/30'
               }`}
             >
-              {isDirect ? 'DIRECT' : 'TRANSITIVE'}
+              {isDirect ? t('components.direct') : t('components.transitive')}
             </span>
             {c.parent_name && !isDirect && (
               <span
                 className="text-[10px] font-mono text-soc-muted truncate max-w-[120px]"
-                title={`via ${c.parent_name}`}
+                title={t('components.via', { name: c.parent_name })}
               >
-                via {c.parent_name}
+                {t('components.via', { name: c.parent_name })}
               </span>
             )}
           </div>
@@ -77,7 +79,7 @@ export const ComponentsPage: React.FC = () => {
     },
     {
       key: 'scope',
-      header: 'Scope',
+      header: t('components.cols.scope'),
       render: (c) => (
         <span className="font-mono text-[11px] text-soc-secondary uppercase">
           {c.scope || 'runtime'}
@@ -86,7 +88,7 @@ export const ComponentsPage: React.FC = () => {
     },
     {
       key: 'source_file',
-      header: 'Origin Source',
+      header: t('components.cols.origin'),
       render: (c) => {
         const originPath = c.lockfile_source || c.source_file;
         const filename = originPath.split('/').pop() || originPath;
@@ -102,17 +104,19 @@ export const ComponentsPage: React.FC = () => {
     },
     {
       key: 'detected_at',
-      header: 'Detected',
+      header: t('components.cols.detected'),
       sortable: true,
-      render: (c) => <span className="font-mono text-xs">{formatDate(c.detected_at)}</span>,
+      render: (c) => (
+        <span className="font-mono text-xs">{formatDate(c.detected_at, dateLocale)}</span>
+      ),
     },
   ];
 
   if (isError) {
     return (
       <ErrorState
-        title="Failed to Load Components"
-        description="Could not query components from the inventory repository."
+        title={t('components.errorTitle')}
+        description={t('components.errorDescription')}
         requestId={(error as { requestId?: string })?.requestId}
         onRetry={() => refetch()}
       />
@@ -121,18 +125,15 @@ export const ComponentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6" data-testid="components-page">
-      <PageHeader
-        title="Software Components Inventory"
-        subtitle="Catalog of all software dependencies detected across scanned target repositories"
-      />
+      <PageHeader title={t('components.title')} subtitle={t('components.subtitle')} />
 
       <DataTable
         columns={columns}
         data={data?.items ?? []}
         keyExtractor={(c) => c.id}
         isLoading={isLoading}
-        emptyTitle="No components cataloged"
-        emptyDescription="Detected packages from scanned requirements.txt, pyproject.toml, and poetry.lock files will be cataloged here."
+        emptyTitle={t('components.emptyTitle')}
+        emptyDescription={t('components.emptyDescription')}
       />
     </div>
   );

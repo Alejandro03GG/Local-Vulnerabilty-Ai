@@ -97,17 +97,17 @@ async def test_scan_json_format_and_output_file(
     )
     assert result.exit_code == CLIExitCode.SUCCESS
 
-    # Verify stdout is valid JSON
-    data = json.loads(result.stdout)
-    assert data["project_name"] == "test_proj"
-    assert data["scan_status"] == "completed"
-    assert data["summary"]["components_found"] == 1
-    assert data["summary"]["matches_found"] == 0
-
-    # Verify report file was written
+    # H15: with --output, full JSON goes to the file; stdout stays non-JSON/operational.
     assert report_file.exists()
     file_data = json.loads(report_file.read_text())
     assert file_data["project_name"] == "test_proj"
+    assert file_data["scan_status"] == "completed"
+    assert file_data["summary"]["components_found"] == 1
+    assert file_data["summary"]["matches_found"] == 0
+    stdout = result.stdout.strip()
+    if stdout:
+        with pytest.raises(json.JSONDecodeError):
+            json.loads(stdout)
 
 
 @pytest.mark.asyncio

@@ -114,7 +114,8 @@ export interface DependencyGraph {
 
 export interface Vulnerability {
   id: string;
-  cve_id: string;
+  canonical_id?: string | null;
+  cve_id?: string | null;
   source_id?: string | null;
   vendor_project?: string | null;
   product?: string | null;
@@ -255,6 +256,8 @@ export interface ContainerImage {
   created_at: string;
   layer_count: number;
   layers: ContainerLayer[];
+  metadata?: Record<string, unknown>;
+  dockerfile_ast?: DockerfileScanResult | null;
 }
 
 export interface ContainerComponent {

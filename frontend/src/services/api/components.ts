@@ -7,7 +7,12 @@ export const componentsApi = {
       page: String(page),
       page_size: String(pageSize),
     });
-    if (projectId) params.append('project_id', projectId);
+    if (projectId) {
+      // Prefer nested project route; global list also accepts ?project_id=
+      return apiClient<PaginatedResponse<DetectedComponent>>(
+        `/api/v1/projects/${projectId}/components?${params.toString()}`,
+      );
+    }
     return apiClient<PaginatedResponse<DetectedComponent>>(
       `/api/v1/components?${params.toString()}`,
     );

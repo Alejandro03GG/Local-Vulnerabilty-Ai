@@ -14,43 +14,30 @@ import {
   Boxes,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n, type MessageKey } from '@/i18n';
 
 interface CommandItem {
   id: string;
-  name: string;
-  category: string;
+  nameKey: MessageKey;
   to: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
 const commands: CommandItem[] = [
-  { id: 'dash', name: 'Go to Dashboard', category: 'Navigation', to: '/', icon: LayoutDashboard },
-  { id: 'proj', name: 'Go to Projects', category: 'Navigation', to: '/projects', icon: FolderGit2 },
-  { id: 'scan', name: 'Go to Scans', category: 'Navigation', to: '/scans', icon: Scan },
-  { id: 'img', name: 'Go to Container Images', category: 'Navigation', to: '/images', icon: Boxes },
-  {
-    id: 'comp',
-    name: 'Go to Components',
-    category: 'Navigation',
-    to: '/components',
-    icon: Package,
-  },
+  { id: 'dash', nameKey: 'commandMenu.goDashboard', to: '/', icon: LayoutDashboard },
+  { id: 'proj', nameKey: 'commandMenu.goProjects', to: '/projects', icon: FolderGit2 },
+  { id: 'scan', nameKey: 'commandMenu.goScans', to: '/scans', icon: Scan },
+  { id: 'img', nameKey: 'commandMenu.goImages', to: '/images', icon: Boxes },
+  { id: 'comp', nameKey: 'commandMenu.goComponents', to: '/components', icon: Package },
   {
     id: 'vuln',
-    name: 'Go to Vulnerabilities',
-    category: 'Navigation',
+    nameKey: 'commandMenu.goVulnerabilities',
     to: '/vulnerabilities',
     icon: ShieldAlert,
   },
-  { id: 'match', name: 'Go to Matches', category: 'Navigation', to: '/matches', icon: Crosshair },
-  {
-    id: 'src',
-    name: 'Go to Sources Intelligence',
-    category: 'Navigation',
-    to: '/sources',
-    icon: Database,
-  },
-  { id: 'sett', name: 'Go to Settings', category: 'Navigation', to: '/settings', icon: Settings },
+  { id: 'match', nameKey: 'commandMenu.goMatches', to: '/matches', icon: Crosshair },
+  { id: 'src', nameKey: 'commandMenu.goSources', to: '/sources', icon: Database },
+  { id: 'sett', nameKey: 'commandMenu.goSettings', to: '/settings', icon: Settings },
 ];
 
 interface CommandMenuProps {
@@ -62,13 +49,17 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({ isOpen, onClose }) => 
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const navigate = useNavigate();
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = commands.filter(
-    (cmd) =>
-      cmd.name.toLowerCase().includes(query.toLowerCase()) ||
-      cmd.category.toLowerCase().includes(query.toLowerCase()),
-  );
+  const category = t('commandMenu.categoryNavigation');
+  const filtered = commands
+    .map((cmd) => ({ ...cmd, name: t(cmd.nameKey) }))
+    .filter(
+      (cmd) =>
+        cmd.name.toLowerCase().includes(query.toLowerCase()) ||
+        category.toLowerCase().includes(query.toLowerCase()),
+    );
 
   useEffect(() => {
     if (isOpen) {
@@ -108,7 +99,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({ isOpen, onClose }) => 
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Command Palette"
+      aria-label={t('commandMenu.ariaLabel')}
     >
       <div
         className="w-full max-w-lg bg-soc-surface border border-soc-border rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
@@ -120,7 +111,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({ isOpen, onClose }) => 
           <input
             ref={inputRef}
             type="text"
-            placeholder="Type a command or navigate... (e.g. Scans, Vulnerabilities)"
+            placeholder={t('commandMenu.placeholder')}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -131,7 +122,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({ isOpen, onClose }) => 
           <button
             onClick={onClose}
             className="text-soc-muted hover:text-soc-primary p-1"
-            aria-label="Close Command Palette"
+            aria-label={t('commandMenu.close')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -140,7 +131,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({ isOpen, onClose }) => 
         <div className="max-h-72 overflow-y-auto p-2 space-y-1">
           {filtered.length === 0 ? (
             <div className="py-6 text-center text-xs text-soc-muted">
-              No commands found matching "{query}"
+              {t('commandMenu.empty', { query })}
             </div>
           ) : (
             filtered.map((cmd, idx) => {
@@ -162,7 +153,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({ isOpen, onClose }) => 
                     <Icon className="w-4 h-4 text-soc-muted" />
                     <span className="font-medium text-soc-primary">{cmd.name}</span>
                   </div>
-                  <span className="text-[10px] font-mono text-soc-muted">{cmd.category}</span>
+                  <span className="text-[10px] font-mono text-soc-muted">{category}</span>
                 </div>
               );
             })
@@ -170,11 +161,11 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({ isOpen, onClose }) => 
         </div>
 
         <div className="px-4 py-2 border-t border-soc-border bg-soc-elevated/40 flex items-center justify-between text-[11px] font-mono text-soc-muted">
-          <span>Navigation Shortcuts</span>
+          <span>{t('commandMenu.shortcuts')}</span>
           <div className="flex gap-2">
-            <span>↑↓ to navigate</span>
-            <span>↵ to select</span>
-            <span>esc to close</span>
+            <span>{t('commandMenu.hintNavigate')}</span>
+            <span>{t('commandMenu.hintSelect')}</span>
+            <span>{t('commandMenu.hintClose')}</span>
           </div>
         </div>
       </div>

@@ -74,6 +74,25 @@ class ComponentService:
             total=total,
         )
 
+    async def list_components(
+        self,
+        project_id: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> PaginatedResponse[ComponentResponse]:
+        """List components globally or scoped to a project (H3 API contract)."""
+        if project_id is not None:
+            return await self.list_by_project(project_id, page=page, page_size=page_size)
+        items, total = await self._repo.list_paginated(
+            project_id=None, page=page, page_size=page_size
+        )
+        return PaginatedResponse(
+            items=[self.to_response(c) for c in items],
+            page=page,
+            page_size=page_size,
+            total=total,
+        )
+
     async def get_component(self, component_id: str) -> ComponentResponse:
         """Get component details by ID."""
         comp = await self._repo.get_by_id(component_id)

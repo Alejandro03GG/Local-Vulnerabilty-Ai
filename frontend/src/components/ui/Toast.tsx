@@ -1,15 +1,17 @@
 import React, { useState, useCallback } from 'react';
 import { CheckCircle2, AlertTriangle, AlertOctagon, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import { ToastContext, type ToastType, type ToastItem } from '@/context/ToastContext';
 
 export type { ToastType, ToastItem };
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { t } = useI18n();
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setToasts((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
   const showToast = useCallback(
@@ -77,7 +79,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               <button
                 onClick={() => removeToast(toast.id)}
                 className="text-soc-muted hover:text-soc-primary transition-colors p-0.5"
-                aria-label="Dismiss toast"
+                aria-label={t('ui.toast.dismiss')}
               >
                 <X className="w-3.5 h-3.5" />
               </button>

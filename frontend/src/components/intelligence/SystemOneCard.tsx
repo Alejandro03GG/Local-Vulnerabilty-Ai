@@ -1,6 +1,7 @@
 import React from 'react';
 import { Network, Zap, Clock, CheckCircle } from 'lucide-react';
 import { cn, formatDuration, formatPercent } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { DecisionResult } from '@/types';
 
 interface SystemOneCardProps {
@@ -9,6 +10,8 @@ interface SystemOneCardProps {
 }
 
 export const SystemOneCard: React.FC<SystemOneCardProps> = ({ decision, className }) => {
+  const { t } = useI18n();
+
   if (!decision) {
     return (
       <div
@@ -18,9 +21,11 @@ export const SystemOneCard: React.FC<SystemOneCardProps> = ({ decision, classNam
         )}
       >
         <Network className="w-8 h-8 text-soc-muted mx-auto mb-2" />
-        <p className="text-sm font-medium text-soc-secondary">No SystemOne evaluation available.</p>
+        <p className="text-sm font-medium text-soc-secondary">
+          {t('intelligence.systemOne.emptyTitle')}
+        </p>
         <span className="text-xs text-soc-muted block mt-1">
-          Fast-inference decision support can be enabled during scans.
+          {t('intelligence.systemOne.emptyHint')}
         </span>
       </div>
     );
@@ -38,10 +43,12 @@ export const SystemOneCard: React.FC<SystemOneCardProps> = ({ decision, classNam
       <div className="p-4 bg-soc-elevated/80 border-b border-soc-border flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Zap className="w-5 h-5 text-indigo-400" aria-hidden="true" />
-          <h3 className="text-sm font-semibold text-soc-primary">SystemOne Decision Support</h3>
+          <h3 className="text-sm font-semibold text-soc-primary">
+            {t('intelligence.systemOne.title')}
+          </h3>
         </div>
         <span className="text-[11px] font-mono text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded">
-          Decision support — supplementary metric
+          {t('intelligence.systemOne.supplementary')}
         </span>
       </div>
 
@@ -50,7 +57,7 @@ export const SystemOneCard: React.FC<SystemOneCardProps> = ({ decision, classNam
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-3 rounded-lg bg-soc-elevated border border-soc-border">
             <span className="text-xs font-mono uppercase text-soc-secondary tracking-wider block">
-              Applicability Probability
+              {t('intelligence.systemOne.applicabilityProbability')}
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-bold font-mono text-soc-primary">
@@ -72,7 +79,7 @@ export const SystemOneCard: React.FC<SystemOneCardProps> = ({ decision, classNam
 
           <div className="p-3 rounded-lg bg-soc-elevated border border-soc-border">
             <span className="text-xs font-mono uppercase text-soc-secondary tracking-wider block">
-              Urgency Score
+              {t('intelligence.systemOne.urgencyScore')}
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-bold font-mono text-soc-primary">
@@ -93,7 +100,7 @@ export const SystemOneCard: React.FC<SystemOneCardProps> = ({ decision, classNam
         {decision.responses && Object.keys(decision.responses).length > 0 && (
           <div>
             <h4 className="text-xs font-mono uppercase text-soc-secondary tracking-wider mb-2">
-              Structured Evaluation Questions
+              {t('intelligence.systemOne.questions')}
             </h4>
             <div className="space-y-2">
               {Object.entries(decision.responses).map(([question, answer]) => (
@@ -117,11 +124,18 @@ export const SystemOneCard: React.FC<SystemOneCardProps> = ({ decision, classNam
         {/* Metadata Footer */}
         <div className="pt-3 border-t border-soc-border flex flex-wrap items-center gap-4 text-xs font-mono text-soc-muted">
           <span>
-            Provider: {decision.provider} ({decision.model})
+            {t('intelligence.systemOne.provider', {
+              provider: decision.provider,
+              model: decision.model,
+            })}
           </span>
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5" />
-            <span>Inference: {formatDuration(decision.latency_seconds)}</span>
+            <span>
+              {t('intelligence.systemOne.inference', {
+                duration: formatDuration(decision.latency_seconds),
+              })}
+            </span>
           </div>
         </div>
       </div>

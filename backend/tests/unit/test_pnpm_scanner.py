@@ -121,3 +121,17 @@ packages:
     opt_edges = [e for e in graph.edges if e.child_name == "debug"]
     assert len(opt_edges) == 1
     assert opt_edges[0].scope == "optional"
+
+
+def test_h21_pnpm_multidocument_lockfile_parses(tmp_path: Path) -> None:
+    """pnpm 9+ YAML multi-document streams must yield packages (H21)."""
+    src = Path(__file__).resolve().parents[1] / "fixtures" / "sample_pnpm_multidoc"
+    (tmp_path / "package.json").write_text((src / "package.json").read_text())
+    (tmp_path / "pnpm-lock.yaml").write_text((src / "pnpm-lock.yaml").read_text())
+
+    scanner = PnpmLockScanner()
+    assert scanner.can_scan(tmp_path) is True
+    graph = scanner.scan_graph(tmp_path)
+    names = {n.name for n in graph.nodes.values()}
+    assert "hono" in names
+    assert any(n.version == "4.6.0" for n in graph.nodes.values() if n.name == "hono")

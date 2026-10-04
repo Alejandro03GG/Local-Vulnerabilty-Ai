@@ -598,10 +598,12 @@ class ScanEngine:
             sync_result = await source.sync()
 
             if sync_result.success:
-                # Persist vulnerability records
+                # Persist vulnerability records (incremental unless full-feed source)
+                prune_missing = db_source.source_type == "cisa_kev" and bool(source.records)
                 count = await self._vulns.upsert_vulnerabilities(
                     source_id=db_source.id,
                     records=source.records,
+                    prune_missing=prune_missing,
                 )
 
                 await self._sources.update_sync_status(

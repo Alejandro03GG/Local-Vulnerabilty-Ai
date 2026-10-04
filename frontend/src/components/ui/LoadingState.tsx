@@ -1,6 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 interface LoadingStateProps {
   message?: string;
@@ -8,18 +9,18 @@ interface LoadingStateProps {
   className?: string;
 }
 
-export const LoadingState: React.FC<LoadingStateProps> = ({
-  message = 'Loading security intelligence...',
-  rows = 4,
-  className,
-}) => {
+export const LoadingState: React.FC<LoadingStateProps> = ({ message, rows = 4, className }) => {
+  const { t } = useI18n();
+
   return (
     <div
       className={cn('flex flex-col items-center justify-center p-12 text-center', className)}
       data-testid="loading-state"
     >
       <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-4" aria-hidden="true" />
-      <p className="text-sm font-medium text-soc-secondary">{message}</p>
+      <p className="text-sm font-medium text-soc-secondary">
+        {message ?? t('ui.loadingState.message')}
+      </p>
 
       {rows > 0 && (
         <div className="w-full max-w-2xl mt-6 space-y-2.5">

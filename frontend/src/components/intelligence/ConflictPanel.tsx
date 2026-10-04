@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { SourceConflict } from '@/types';
 import { ApplicabilityBadge } from '../badges/ApplicabilityBadge';
 
@@ -10,6 +11,8 @@ interface ConflictPanelProps {
 }
 
 export const ConflictPanel: React.FC<ConflictPanelProps> = ({ conflicts, className }) => {
+  const { t } = useI18n();
+
   if (!conflicts || conflicts.length === 0) {
     return (
       <div
@@ -21,9 +24,9 @@ export const ConflictPanel: React.FC<ConflictPanelProps> = ({ conflicts, classNa
       >
         <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" aria-hidden="true" />
         <div>
-          <span className="font-semibold">No source conflicts detected.</span>
+          <span className="font-semibold">{t('intelligence.conflict.noneTitle')}</span>
           <span className="text-xs text-soc-secondary block mt-0.5">
-            All intelligence sources agree on version boundaries and applicability for this match.
+            {t('intelligence.conflict.noneHint')}
           </span>
         </div>
       </div>
@@ -44,18 +47,20 @@ export const ConflictPanel: React.FC<ConflictPanelProps> = ({ conflicts, classNa
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30">
-                  SOURCE APPLICABILITY CONFLICT
+                  {t('intelligence.conflict.badge')}
                 </span>
                 <span className="text-xs font-mono text-soc-muted">
-                  Field: <strong className="text-soc-primary">{conflict.field}</strong>
+                  {t('intelligence.conflict.field')}{' '}
+                  <strong className="text-soc-primary">{conflict.field}</strong>
                 </span>
                 <span className="text-xs font-mono text-soc-muted">
-                  Type: <strong className="text-soc-primary">{conflict.conflict_type}</strong>
+                  {t('intelligence.conflict.type')}{' '}
+                  <strong className="text-soc-primary">{conflict.conflict_type}</strong>
                 </span>
               </div>
 
               <h4 className="text-sm font-semibold text-soc-primary mt-2">
-                Discrepancy Between Intelligence Sources
+                {t('intelligence.conflict.heading')}
               </h4>
 
               {/* Source values breakdown */}
@@ -72,7 +77,8 @@ export const ConflictPanel: React.FC<ConflictPanelProps> = ({ conflicts, classNa
                       className="p-3 rounded bg-soc-surface border border-soc-border"
                     >
                       <div className="text-[11px] font-mono uppercase text-soc-secondary tracking-wider mb-1">
-                        Source: <span className="text-soc-primary font-bold">{sourceName}</span>
+                        {t('intelligence.conflict.source')}{' '}
+                        <span className="text-soc-primary font-bold">{sourceName}</span>
                       </div>
                       <div className="mt-1">
                         {valStr === 'LIKELY_AFFECTED' ||
@@ -92,13 +98,15 @@ export const ConflictPanel: React.FC<ConflictPanelProps> = ({ conflicts, classNa
               <div className="mt-3 pt-3 border-t border-amber-500/20 flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono text-soc-secondary">
-                    Consolidated Resolution:
+                    {t('intelligence.conflict.resolution')}
                   </span>
                   <ApplicabilityBadge status={conflict.resolution} />
                 </div>
                 {conflict.rationale && (
                   <p className="text-xs text-soc-secondary leading-relaxed font-sans">
-                    <strong className="text-soc-primary">Conflict Reason:</strong>{' '}
+                    <strong className="text-soc-primary">
+                      {t('intelligence.conflict.reason')}
+                    </strong>{' '}
                     {conflict.rationale}
                   </p>
                 )}

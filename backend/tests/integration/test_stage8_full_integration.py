@@ -363,7 +363,7 @@ def test_caso10_kev_plus_outside_range():
     assessment = risk_engine.assess(matches[0])
     # Must preserve LIKELY_NOT_AFFECTED despite KEV confirmation
     assert assessment.status == RiskStatus.LIKELY_NOT_AFFECTED
-    assert assessment.risk_level == RiskLevel.LOW
+    assert assessment.risk_level == RiskLevel.UNKNOWN
     assert assessment.requires_human_review is False
     assert "KEV_CONFIRMED" in assessment.rule_ids
     assert "APPLICABILITY_LIKELY_NOT_AFFECTED" in assessment.rule_ids

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -36,11 +37,13 @@ from vuln_ai.container.dockerfile import (
     parse_dockerfile_content,
     parse_dockerfile_file,
 )
+from vuln_ai.container.models import ContainerImage
 from vuln_ai.core.engine import ScanEngine
 from vuln_ai.core.models import ScanStatus
 from vuln_ai.db.repositories import (
     ContainerRepository,
     PolicyRepository,
+    ProjectRepository,
     ScanRepository,
     SuppressionRepository,
 )
@@ -69,6 +72,11 @@ def _map_image_response(db_image: Any) -> ContainerImageResponse:
         )
         for layer in getattr(db_image, "layers", [])
     ]
+    try:
+        metadata = json.loads(db_image.metadata_json or "{}")
+    except (TypeError, json.JSONDecodeError):
+        metadata = {}
+    dockerfile_ast = metadata.get("dockerfile_ast")
     return ContainerImageResponse(
         id=db_image.id,
         scan_id=db_image.scan_id,
@@ -84,6 +92,8 @@ def _map_image_response(db_image: Any) -> ContainerImageResponse:
         created_at=db_image.created_at,
         layer_count=len(layers),
         layers=layers,
+        metadata=metadata if isinstance(metadata, dict) else {},
+        dockerfile_ast=dockerfile_ast if isinstance(dockerfile_ast, dict) else None,
     )
 
 
@@ -417,17 +427,74 @@ async def get_image_policy(
 )
 async def scan_dockerfile_endpoint(
     payload: DockerfileScanRequest,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    container_repo: Annotated[ContainerRepository, Depends(get_container_repo)],
 ) -> DockerfileScanResponse:
-    """Statically parse and analyze a Dockerfile without execution."""
+    """Statically parse and analyze a Dockerfile without execution.
+
+    When ``persist`` is true (default), stores the AST on a ContainerImage row
+    with ``source_type=dockerfile`` so it appears in the Images UI (H9).
+    """
     if payload.content is not None:
         doc = parse_dockerfile_content(payload.content, source_file="Dockerfile")
+        source_path = ""
+        reference = "Dockerfile"
     elif payload.path is not None:
         doc = parse_dockerfile_file(payload.path)
+        source_path = str(Path(payload.path).resolve())
+        reference = Path(payload.path).name
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Must provide either 'content' or 'path' for Dockerfile analysis",
         )
+
+    image_id: str | None = None
+    scan_id: str | None = None
+    if payload.persist:
+        try:
+            proj_repo = ProjectRepository(session)
+            scan_repo = ScanRepository(session)
+            project_path = source_path or f"dockerfile://{reference}"
+            project, _created = await proj_repo.get_or_create(
+                name=f"dockerfile:{reference}",
+                path=project_path,
+                description="Dockerfile static AST scan",
+            )
+            db_scan = await scan_repo.create(project.id)
+            scan_id = db_scan.id
+            ast_payload = {
+                "dockerfile_ast": {
+                    "source_file": doc.source_file,
+                    "stages": [s.model_dump(mode="json") for s in doc.stages],
+                    "base_images": [b.model_dump(mode="json") for b in doc.base_images],
+                    "package_installations": doc.package_installations,
+                    "copied_files": doc.copied_files,
+                    "dependency_manifests": doc.dependency_manifests,
+                }
+            }
+            domain_image = ContainerImage(
+                id=str(uuid.uuid4()),
+                reference=reference,
+                source_type="dockerfile",
+                source_path=source_path,
+                metadata=ast_payload,
+            )
+            db_image = await container_repo.create_image(
+                scan_id=scan_id, image=domain_image, commit=True
+            )
+            image_id = db_image.id
+            await scan_repo.complete(
+                scan_id,
+                components_found=0,
+                vulnerabilities_found=0,
+            )
+        except Exception:
+            # Persist is best-effort: static AST response must still succeed (H9).
+            # Rollback so the request session is usable for the response lifecycle.
+            await session.rollback()
+            image_id = None
+            scan_id = None
 
     return DockerfileScanResponse(
         source_file=doc.source_file,
@@ -436,4 +503,6 @@ async def scan_dockerfile_endpoint(
         package_installations=doc.package_installations,
         copied_files=doc.copied_files,
         dependency_manifests=doc.dependency_manifests,
+        image_id=image_id,
+        scan_id=scan_id,
     )

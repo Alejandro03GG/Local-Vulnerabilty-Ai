@@ -9,12 +9,14 @@ import { useToast } from '@/hooks/useToast';
 import { projectsApi } from '@/services/api/projects';
 import { scansApi } from '@/services/api/scans';
 import { formatDate } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { Project } from '@/types';
 
 export const ProjectsPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { t, dateLocale } = useI18n();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -32,10 +34,14 @@ export const ProjectsPage: React.FC = () => {
       setIsModalOpen(false);
       setNewName('');
       setNewPath('');
-      showToast('success', 'Project created', `Project "${project.name}" added successfully.`);
+      showToast(
+        'success',
+        t('projects.toast.created'),
+        t('projects.toast.createdDescription', { name: project.name }),
+      );
     },
     onError: (err: { message: string }) => {
-      showToast('error', 'Failed to create project', err.message);
+      showToast('error', t('projects.toast.createFailed'), err.message);
     },
   });
 
@@ -44,11 +50,15 @@ export const ProjectsPage: React.FC = () => {
     onSuccess: (scan) => {
       queryClient.invalidateQueries({ queryKey: ['scans'] });
       queryClient.invalidateQueries({ queryKey: ['matches'] });
-      showToast('success', 'Scan initiated', `Scan ${scan.id.substring(0, 8)} started.`);
+      showToast(
+        'success',
+        t('projects.toast.scanInitiated'),
+        t('projects.toast.scanStarted', { id: scan.id.substring(0, 8) }),
+      );
       navigate(`/scans/${scan.id}`);
     },
     onError: (err: { message: string }) => {
-      showToast('error', 'Scan failed to start', err.message);
+      showToast('error', t('projects.toast.scanFailed'), err.message);
     },
   });
 
@@ -56,10 +66,10 @@ export const ProjectsPage: React.FC = () => {
     mutationFn: projectsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      showToast('info', 'Project deleted', 'Project removed from local registry.');
+      showToast('info', t('projects.toast.deleted'), t('projects.toast.deletedDescription'));
     },
     onError: (err: { message: string }) => {
-      showToast('error', 'Failed to delete project', err.message);
+      showToast('error', t('projects.toast.deleteFailed'), err.message);
     },
   });
 
@@ -72,7 +82,7 @@ export const ProjectsPage: React.FC = () => {
   const columns: Column<Project>[] = [
     {
       key: 'name',
-      header: 'Project Name',
+      header: t('projects.cols.name'),
       sortable: true,
       render: (p) => (
         <div className="flex items-center gap-2">
@@ -83,7 +93,7 @@ export const ProjectsPage: React.FC = () => {
     },
     {
       key: 'path',
-      header: 'Directory Path',
+      header: t('projects.cols.path'),
       render: (p) => (
         <span
           className="font-mono text-xs text-soc-secondary truncate max-w-xs block"
@@ -95,19 +105,23 @@ export const ProjectsPage: React.FC = () => {
     },
     {
       key: 'created_at',
-      header: 'Registered',
+      header: t('projects.cols.registered'),
       sortable: true,
-      render: (p) => <span className="font-mono text-xs">{formatDate(p.created_at)}</span>,
+      render: (p) => (
+        <span className="font-mono text-xs">{formatDate(p.created_at, dateLocale)}</span>
+      ),
     },
     {
       key: 'updated_at',
-      header: 'Last Updated',
+      header: t('projects.cols.updated'),
       sortable: true,
-      render: (p) => <span className="font-mono text-xs">{formatDate(p.updated_at)}</span>,
+      render: (p) => (
+        <span className="font-mono text-xs">{formatDate(p.updated_at, dateLocale)}</span>
+      ),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t('projects.cols.actions'),
       className: 'text-right',
       render: (p) => (
         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
@@ -115,28 +129,28 @@ export const ProjectsPage: React.FC = () => {
             onClick={() => scanMutation.mutate(p.id)}
             disabled={scanMutation.isPending}
             className="p-1.5 rounded bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 border border-blue-500/30 transition-colors"
-            title="Run Security Scan"
-            aria-label={`Run scan on ${p.name}`}
+            title={t('projects.runScan')}
+            aria-label={t('projects.ariaRunScan', { name: p.name })}
           >
             <Play className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => navigate(`/projects/${p.id}`)}
             className="p-1.5 rounded bg-soc-elevated text-soc-secondary hover:text-white border border-soc-border transition-colors"
-            title="View Details"
-            aria-label={`View details of ${p.name}`}
+            title={t('projects.viewDetails')}
+            aria-label={t('projects.ariaViewDetails', { name: p.name })}
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => {
-              if (window.confirm(`Are you sure you want to delete project "${p.name}"?`)) {
+              if (window.confirm(t('projects.confirmDelete', { name: p.name }))) {
                 deleteMutation.mutate(p.id);
               }
             }}
             className="p-1.5 rounded bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30 transition-colors"
-            title="Delete Project"
-            aria-label={`Delete ${p.name}`}
+            title={t('projects.deleteProject')}
+            aria-label={t('projects.ariaDelete', { name: p.name })}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -148,8 +162,8 @@ export const ProjectsPage: React.FC = () => {
   if (isError) {
     return (
       <ErrorState
-        title="Failed to Load Projects"
-        description="Could not query projects from backend repository."
+        title={t('projects.errorTitle')}
+        description={t('projects.errorDescription')}
         requestId={(error as { requestId?: string })?.requestId}
         onRetry={() => refetch()}
       />
@@ -159,15 +173,15 @@ export const ProjectsPage: React.FC = () => {
   return (
     <div className="space-y-6" data-testid="projects-page">
       <PageHeader
-        title="Configured Projects"
-        subtitle="Manage target repositories and local codebases evaluated by the vulnerability engine"
+        title={t('projects.title')}
+        subtitle={t('projects.subtitle')}
         actions={
           <button
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-500 transition-colors shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Register Project</span>
+            <span>{t('projects.register')}</span>
           </button>
         }
       />
@@ -177,8 +191,8 @@ export const ProjectsPage: React.FC = () => {
         data={data?.items ?? []}
         keyExtractor={(p) => p.id}
         isLoading={isLoading}
-        emptyTitle="No projects configured"
-        emptyDescription="Add a project path to scan Python requirements, poetry, or pipfile dependencies."
+        emptyTitle={t('projects.emptyTitle')}
+        emptyDescription={t('projects.emptyDescription')}
         onRowClick={(p) => navigate(`/projects/${p.id}`)}
       />
 
@@ -190,20 +204,20 @@ export const ProjectsPage: React.FC = () => {
           aria-modal="true"
         >
           <div className="w-full max-w-md p-6 bg-soc-surface border border-soc-border rounded-xl shadow-2xl">
-            <h3 className="text-base font-semibold text-soc-primary mb-1">Register New Project</h3>
-            <p className="text-xs text-soc-secondary mb-4">
-              Enter the project name and absolute directory path accessible by the local backend.
-            </p>
+            <h3 className="text-base font-semibold text-soc-primary mb-1">
+              {t('projects.modal.title')}
+            </h3>
+            <p className="text-xs text-soc-secondary mb-4">{t('projects.modal.description')}</p>
 
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-mono uppercase text-soc-secondary mb-1">
-                  Project Name
+                  {t('projects.modal.nameLabel')}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. My Web App"
+                  placeholder={t('projects.modal.namePlaceholder')}
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className="w-full px-3 py-2 text-xs rounded bg-soc-elevated border border-soc-border text-soc-primary focus:outline-none focus:border-blue-500"
@@ -212,12 +226,12 @@ export const ProjectsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-mono uppercase text-soc-secondary mb-1">
-                  Absolute Directory Path
+                  {t('projects.modal.pathLabel')}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="/Users/.../my-repo"
+                  placeholder={t('projects.modal.pathPlaceholder')}
                   value={newPath}
                   onChange={(e) => setNewPath(e.target.value)}
                   className="w-full px-3 py-2 text-xs font-mono rounded bg-soc-elevated border border-soc-border text-soc-primary focus:outline-none focus:border-blue-500"
@@ -230,14 +244,14 @@ export const ProjectsPage: React.FC = () => {
                   onClick={() => setIsModalOpen(false)}
                   className="px-3 py-2 text-xs rounded bg-soc-elevated border border-soc-border text-soc-secondary hover:text-white transition-colors"
                 >
-                  Cancel
+                  {t('projects.modal.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
                   className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-500 transition-colors disabled:opacity-50"
                 >
-                  {createMutation.isPending ? 'Saving...' : 'Add Project'}
+                  {createMutation.isPending ? t('projects.modal.saving') : t('projects.modal.add')}
                 </button>
               </div>
             </form>

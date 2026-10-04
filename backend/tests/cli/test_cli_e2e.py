@@ -92,7 +92,7 @@ def test_cli_subprocess_scan_e2e(tmp_path: Path) -> None:
     )
 
     assert res.returncode == CLIExitCode.SUCCESS
-    data = json.loads(res.stdout)
+    assert report_path.exists()
+    data = json.loads(report_path.read_text())
     assert data["project_name"] == "target_project"
     assert data["summary"]["components_found"] == 2
-    assert report_path.exists()

@@ -364,3 +364,7 @@ Distributed under the **MIT License**. See **[LICENSE](LICENSE)** for the full t
 
 **Version 1.0.1 — Release Ready**  
 Production-ready open-source release with comprehensive regression coverage, verified zero-execution container security, deterministic policy enforcement, and multi-format exports. Patch 1.0.1 stabilizes GitHub Actions backend quality gates without changing product behavior.
+
+## Stage 19.1 — Product Hardening
+
+Post–Stage 19 validation hardening on the main product: nullable CVE IDs, incremental catalog sync, policy/applicability alignment, monorepo discovery, `uv.lock` / pnpm multi-doc support, Dockerfile AST persistence, and EN/ES UI branding. See `STAGE-19.1-HARDENING-REPORT.md`.

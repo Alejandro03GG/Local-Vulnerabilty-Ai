@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { render } from './renderWithLanguage';
 import { ConflictPanel } from '@/components/intelligence/ConflictPanel';
 import { AuditTrace } from '@/components/intelligence/AuditTrace';
 import { mockConflict, mockRiskAssessmentWithConflict } from './fixtures';

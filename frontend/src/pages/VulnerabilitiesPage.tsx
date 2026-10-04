@@ -7,10 +7,13 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { vulnerabilitiesApi } from '@/services/api/vulnerabilities';
 import { formatDate } from '@/lib/utils';
+import { useI18n } from '@/i18n';
+import { vulnerabilityDisplayId } from '@/lib/vulnerabilityId';
 import type { Vulnerability } from '@/types';
 
 export const VulnerabilitiesPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, dateLocale } = useI18n();
   const [page] = useState(1);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -21,27 +24,27 @@ export const VulnerabilitiesPage: React.FC = () => {
   const columns: Column<Vulnerability>[] = [
     {
       key: 'cve_id',
-      header: 'Identifier (CVE)',
+      header: t('vulnerabilities.cols.identifier'),
       sortable: true,
       render: (v) => (
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
-          <span className="font-mono font-semibold text-rose-400">{v.cve_id}</span>
+          <span className="font-mono font-semibold text-rose-400">{vulnerabilityDisplayId(v)}</span>
         </div>
       ),
     },
     {
       key: 'vulnerability_name',
-      header: 'Vulnerability Title',
+      header: t('vulnerabilities.cols.title'),
       render: (v) => (
         <span className="text-xs text-soc-primary font-medium line-clamp-1">
-          {v.vulnerability_name || v.short_description || 'Security Advisory'}
+          {v.vulnerability_name || v.short_description || t('vulnerabilities.advisoryFallback')}
         </span>
       ),
     },
     {
       key: 'product',
-      header: 'Vendor / Product',
+      header: t('vulnerabilities.cols.vendorProduct'),
       render: (v) => (
         <span className="font-mono text-xs text-soc-secondary">
           {v.vendor_project ? `${v.vendor_project} / ${v.product || '*'}` : v.product || '—'}
@@ -50,30 +53,34 @@ export const VulnerabilitiesPage: React.FC = () => {
     },
     {
       key: 'known_ransomware_use',
-      header: 'CISA KEV / Exploitation',
+      header: t('vulnerabilities.cols.kev'),
       render: (v) =>
         v.known_ransomware_use ? (
           <span className="inline-flex items-center gap-1 font-mono text-[11px] text-red-400 font-bold px-2 py-0.5 rounded bg-red-500/10 border border-red-500/30">
             <Flame className="w-3 h-3 text-red-400" />
-            KEV: {v.known_ransomware_use}
+            {t('vulnerabilities.kev', { value: v.known_ransomware_use })}
           </span>
         ) : (
-          <span className="font-mono text-[11px] text-soc-muted">Standard</span>
+          <span className="font-mono text-[11px] text-soc-muted">
+            {t('vulnerabilities.standard')}
+          </span>
         ),
     },
     {
       key: 'date_added',
-      header: 'Cataloged',
+      header: t('vulnerabilities.cols.cataloged'),
       sortable: true,
-      render: (v) => <span className="font-mono text-xs">{formatDate(v.date_added)}</span>,
+      render: (v) => (
+        <span className="font-mono text-xs">{formatDate(v.date_added, dateLocale)}</span>
+      ),
     },
   ];
 
   if (isError) {
     return (
       <ErrorState
-        title="Failed to Load Vulnerability Catalog"
-        description="Could not query vulnerability catalog from database."
+        title={t('vulnerabilities.errorTitle')}
+        description={t('vulnerabilities.errorDescription')}
         requestId={(error as { requestId?: string })?.requestId}
         onRetry={() => refetch()}
       />
@@ -82,18 +89,15 @@ export const VulnerabilitiesPage: React.FC = () => {
 
   return (
     <div className="space-y-6" data-testid="vulnerabilities-page">
-      <PageHeader
-        title="Vulnerability Intelligence Catalog"
-        subtitle="Catalog of synchronized vulnerability advisories from OSV, NVD, and CISA KEV sources"
-      />
+      <PageHeader title={t('vulnerabilities.title')} subtitle={t('vulnerabilities.subtitle')} />
 
       <DataTable
         columns={columns}
         data={data?.items ?? []}
         keyExtractor={(v) => v.id}
         isLoading={isLoading}
-        emptyTitle="No vulnerabilities synchronized"
-        emptyDescription="Ensure source intelligence sync is configured on the Sources page."
+        emptyTitle={t('vulnerabilities.emptyTitle')}
+        emptyDescription={t('vulnerabilities.emptyDescription')}
         onRowClick={(v) => navigate(`/vulnerabilities/${v.id}`)}
       />
     </div>

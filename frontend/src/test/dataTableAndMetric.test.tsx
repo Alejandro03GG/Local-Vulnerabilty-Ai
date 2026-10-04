@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { render } from './renderWithLanguage';
 import { DataTable } from '@/components/ui/DataTable';
 import { Metric } from '@/components/ui/Metric';
 import { Shield } from 'lucide-react';

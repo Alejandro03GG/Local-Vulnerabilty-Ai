@@ -34,6 +34,7 @@ from vuln_ai.scanners.pnpm_scanner import PnpmLockScanner
 from vuln_ai.scanners.poetry_scanner import PoetryLockScanner
 from vuln_ai.scanners.python_scanner import PythonScanner
 from vuln_ai.scanners.registry import ScannerRegistry
+from vuln_ai.scanners.uv_scanner import UvLockScanner
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,7 @@ def _create_app_scanner_registry() -> ScannerRegistry:
     registry = ScannerRegistry()
     registry.register(PythonScanner())
     registry.register(PoetryLockScanner())
+    registry.register(UvLockScanner())
     registry.register(NpmLockScanner())
     registry.register(PnpmLockScanner())
     registry.register(CargoLockScanner())

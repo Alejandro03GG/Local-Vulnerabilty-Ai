@@ -12,10 +12,12 @@ import {
   DockerfileScanPayload,
 } from '@/services/api/images';
 import { formatDate } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { ContainerImage, DockerfileScanResult } from '@/types';
 
 export const ContainerImagesPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, dateLocale } = useI18n();
   const queryClient = useQueryClient();
   const [page] = useState(1);
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
@@ -49,9 +51,7 @@ export const ContainerImagesPage: React.FC = () => {
       navigate(`/images/${newImage.id}`);
     },
     onError: (err: unknown) => {
-      const msg =
-        (err as { message?: string })?.message ||
-        'Failed to inspect container image. Ensure the archive file exists and is readable.';
+      const msg = (err as { message?: string })?.message || t('containerImages.errors.scanFailed');
       setScanError(msg);
     },
   });
@@ -64,8 +64,7 @@ export const ContainerImagesPage: React.FC = () => {
     },
     onError: (err: unknown) => {
       const msg =
-        (err as { message?: string })?.message ||
-        'Failed to parse Dockerfile. Check syntax or file path.';
+        (err as { message?: string })?.message || t('containerImages.errors.dockerfileFailed');
       setDockerfileError(msg);
     },
   });
@@ -73,7 +72,7 @@ export const ContainerImagesPage: React.FC = () => {
   const handleScanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!archivePath.trim()) {
-      setScanError('Please enter a valid container archive path');
+      setScanError(t('containerImages.errors.archivePathRequired'));
       return;
     }
     setScanError(null);
@@ -87,7 +86,7 @@ export const ContainerImagesPage: React.FC = () => {
   const handleDockerfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!dockerfileContent.trim() && !dockerfilePath.trim()) {
-      setDockerfileError('Provide either Dockerfile content or an absolute file path');
+      setDockerfileError(t('containerImages.errors.dockerfileInputRequired'));
       return;
     }
     setDockerfileError(null);
@@ -103,7 +102,7 @@ export const ContainerImagesPage: React.FC = () => {
   const columns: Column<ContainerImage>[] = [
     {
       key: 'reference',
-      header: 'Image Reference',
+      header: t('containerImages.cols.reference'),
       sortable: true,
       render: (img) => (
         <div>
@@ -121,18 +120,19 @@ export const ContainerImagesPage: React.FC = () => {
     },
     {
       key: 'os',
-      header: 'OS / Distribution',
+      header: t('containerImages.cols.os'),
       sortable: true,
       render: (img) => (
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono bg-soc-elevated text-soc-primary border border-soc-border">
           <Cpu className="w-3 h-3 text-soc-secondary" />
-          {img.os} {img.os_version ? `(${img.os_version})` : ''}
+          {img.os}{' '}
+          {img.os_version ? t('containerImages.osVersion', { version: img.os_version }) : ''}
         </span>
       ),
     },
     {
       key: 'architecture',
-      header: 'Arch',
+      header: t('containerImages.cols.arch'),
       sortable: true,
       render: (img) => (
         <span className="font-mono text-xs uppercase px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
@@ -142,17 +142,17 @@ export const ContainerImagesPage: React.FC = () => {
     },
     {
       key: 'layer_count',
-      header: 'Layers',
+      header: t('containerImages.cols.layers'),
       sortable: true,
       render: (img) => (
         <span className="font-mono text-xs font-semibold text-soc-primary">
-          {img.layer_count} layers
+          {t('containerImages.layersCount', { count: img.layer_count })}
         </span>
       ),
     },
     {
       key: 'source_type',
-      header: 'Format',
+      header: t('containerImages.cols.format'),
       render: (img) => (
         <span className="text-[11px] font-mono text-soc-secondary uppercase">
           {img.source_type}
@@ -161,17 +161,19 @@ export const ContainerImagesPage: React.FC = () => {
     },
     {
       key: 'created_at',
-      header: 'Scanned At',
+      header: t('containerImages.cols.scannedAt'),
       sortable: true,
-      render: (img) => <span className="font-mono text-xs">{formatDate(img.created_at)}</span>,
+      render: (img) => (
+        <span className="font-mono text-xs">{formatDate(img.created_at, dateLocale)}</span>
+      ),
     },
   ];
 
   if (isError) {
     return (
       <ErrorState
-        title="Failed to Load Container Images"
-        description="Could not query container images from the local scanning engine."
+        title={t('containerImages.errorTitle')}
+        description={t('containerImages.errorDescription')}
         onRetry={() => refetch()}
       />
     );
@@ -180,8 +182,8 @@ export const ContainerImagesPage: React.FC = () => {
   return (
     <div className="space-y-6" data-testid="container-images-page">
       <PageHeader
-        title="Container Images & Dockerfiles"
-        subtitle="Static vulnerability and layer inspection for Docker/OCI tarballs without daemon execution"
+        title={t('containerImages.title')}
+        subtitle={t('containerImages.subtitle')}
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -193,7 +195,7 @@ export const ContainerImagesPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-soc-elevated hover:bg-soc-surface border border-soc-border text-soc-primary transition-colors"
             >
               <FileCode className="w-3.5 h-3.5 text-blue-400" />
-              Analyze Dockerfile
+              {t('containerImages.analyzeDockerfile')}
             </button>
             <button
               onClick={() => {
@@ -203,7 +205,7 @@ export const ContainerImagesPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
-              Scan Image Archive
+              {t('containerImages.scanArchive')}
             </button>
           </div>
         }
@@ -212,28 +214,28 @@ export const ContainerImagesPage: React.FC = () => {
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Metric
-          label="Scanned Images"
+          label={t('containerImages.metrics.images')}
           value={data?.total ?? 0}
           icon={Boxes}
-          subtext="Unique image archives inspected"
+          subtext={t('containerImages.metrics.imagesHint')}
         />
         <Metric
-          label="Total Layers"
+          label={t('containerImages.metrics.layers')}
           value={totalLayers}
           icon={Cpu}
-          subtext="Immutable filesystem layers parsed"
+          subtext={t('containerImages.metrics.layersHint')}
         />
         <Metric
-          label="Inspection Mode"
-          value="Static Pure-Python"
+          label={t('containerImages.metrics.mode')}
+          value={t('containerImages.metrics.modeValue')}
           icon={Boxes}
-          subtext="Zero workload runtime execution"
+          subtext={t('containerImages.metrics.modeHint')}
         />
         <Metric
-          label="Active Engine"
-          value="Determinism v1.0"
+          label={t('containerImages.metrics.engine')}
+          value={t('containerImages.metrics.engineValue')}
           icon={Boxes}
-          subtext="Catalog + Multi-source Risk Engine"
+          subtext={t('containerImages.metrics.engineHint')}
         />
       </div>
 
@@ -243,8 +245,8 @@ export const ContainerImagesPage: React.FC = () => {
         data={images}
         keyExtractor={(img) => img.id}
         isLoading={isLoading}
-        emptyTitle="No Container Images Scanned Yet"
-        emptyDescription="Execute an image scan on a local Docker/OCI tarball (.tar) to inspect OS packages and application dependencies."
+        emptyTitle={t('containerImages.emptyTitle')}
+        emptyDescription={t('containerImages.emptyDescription')}
         onRowClick={(img) => navigate(`/images/${img.id}`)}
       />
 
@@ -255,11 +257,12 @@ export const ContainerImagesPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-soc-border pb-3">
               <h3 className="font-semibold text-sm text-soc-primary flex items-center gap-2">
                 <Boxes className="w-4 h-4 text-blue-400" />
-                Scan Container Archive
+                {t('containerImages.scanModal.title')}
               </h3>
               <button
                 onClick={() => setIsScanModalOpen(false)}
                 className="text-soc-muted hover:text-soc-primary text-xs"
+                aria-label={t('containerImages.scanModal.close')}
               >
                 ✕
               </button>
@@ -275,30 +278,31 @@ export const ContainerImagesPage: React.FC = () => {
             <form onSubmit={handleScanSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-soc-secondary mb-1">
-                  Archive Path (.tar) <span className="text-red-400">*</span>
+                  {t('containerImages.scanModal.archivePath')}{' '}
+                  <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={archivePath}
                   onChange={(e) => setArchivePath(e.target.value)}
-                  placeholder="/path/to/image.tar"
+                  placeholder={t('containerImages.scanModal.archivePathPlaceholder')}
                   className="w-full px-3 py-1.5 bg-soc-elevated border border-soc-border rounded text-xs text-soc-primary font-mono focus:outline-none focus:border-blue-500"
                   required
                 />
                 <p className="text-[11px] text-soc-muted mt-1">
-                  Absolute or relative path to a local Docker archive or OCI tarball.
+                  {t('containerImages.scanModal.archivePathHint')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-soc-secondary mb-1">
-                  Custom Image Tag / Reference
+                  {t('containerImages.scanModal.reference')}
                 </label>
                 <input
                   type="text"
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
-                  placeholder="e.g. my-app:1.0 (defaults to archive tag)"
+                  placeholder={t('containerImages.scanModal.referencePlaceholder')}
                   className="w-full px-3 py-1.5 bg-soc-elevated border border-soc-border rounded text-xs text-soc-primary font-mono focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -312,7 +316,7 @@ export const ContainerImagesPage: React.FC = () => {
                   className="rounded border-soc-border bg-soc-elevated text-blue-600 focus:ring-0"
                 />
                 <label htmlFor="no-ai" className="text-xs text-soc-secondary">
-                  Disable optional local AI analysis (pure deterministic matching)
+                  {t('containerImages.scanModal.noAi')}
                 </label>
               </div>
 
@@ -322,14 +326,16 @@ export const ContainerImagesPage: React.FC = () => {
                   onClick={() => setIsScanModalOpen(false)}
                   className="px-3 py-1.5 rounded text-xs text-soc-secondary hover:text-soc-primary transition-colors"
                 >
-                  Cancel
+                  {t('containerImages.scanModal.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={scanMutation.isPending}
                   className="px-4 py-1.5 rounded text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors disabled:opacity-50"
                 >
-                  {scanMutation.isPending ? 'Inspecting Archive...' : 'Start Static Scan'}
+                  {scanMutation.isPending
+                    ? t('containerImages.scanModal.inspecting')
+                    : t('containerImages.scanModal.start')}
                 </button>
               </div>
             </form>
@@ -344,11 +350,12 @@ export const ContainerImagesPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-soc-border pb-3">
               <h3 className="font-semibold text-sm text-soc-primary flex items-center gap-2">
                 <FileCode className="w-4 h-4 text-blue-400" />
-                Static Dockerfile AST Analysis
+                {t('containerImages.dockerfileModal.title')}
               </h3>
               <button
                 onClick={() => setIsDockerfileModalOpen(false)}
                 className="text-soc-muted hover:text-soc-primary text-xs"
+                aria-label={t('containerImages.dockerfileModal.close')}
               >
                 ✕
               </button>
@@ -365,7 +372,7 @@ export const ContainerImagesPage: React.FC = () => {
               <form onSubmit={handleDockerfileSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-soc-secondary mb-1">
-                    Dockerfile Content
+                    {t('containerImages.dockerfileModal.content')}
                   </label>
                   <textarea
                     rows={8}
@@ -378,13 +385,13 @@ export const ContainerImagesPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-medium text-soc-secondary mb-1">
-                    Or Local File Path
+                    {t('containerImages.dockerfileModal.path')}
                   </label>
                   <input
                     type="text"
                     value={dockerfilePath}
                     onChange={(e) => setDockerfilePath(e.target.value)}
-                    placeholder="/path/to/Dockerfile"
+                    placeholder={t('containerImages.dockerfileModal.pathPlaceholder')}
                     className="w-full px-3 py-1.5 bg-soc-elevated border border-soc-border rounded text-xs text-soc-primary font-mono focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -395,31 +402,42 @@ export const ContainerImagesPage: React.FC = () => {
                     onClick={() => setIsDockerfileModalOpen(false)}
                     className="px-3 py-1.5 rounded text-xs text-soc-secondary hover:text-soc-primary transition-colors"
                   >
-                    Cancel
+                    {t('containerImages.dockerfileModal.cancel')}
                   </button>
                   <button
                     type="submit"
                     disabled={dockerfileMutation.isPending}
                     className="px-4 py-1.5 rounded text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors disabled:opacity-50"
                   >
-                    {dockerfileMutation.isPending ? 'Analyzing AST...' : 'Parse & Analyze'}
+                    {dockerfileMutation.isPending
+                      ? t('containerImages.dockerfileModal.analyzing')
+                      : t('containerImages.dockerfileModal.parse')}
                   </button>
                 </div>
               </form>
             ) : (
               <div className="space-y-4 text-xs font-mono">
                 <div className="p-3 bg-soc-elevated rounded border border-soc-border space-y-2">
-                  <div className="text-soc-secondary font-semibold">Stages Detected:</div>
+                  <div className="text-soc-secondary font-semibold">
+                    {t('containerImages.dockerfileModal.stages')}
+                  </div>
                   <div className="space-y-1">
                     {dockerfileResult.stages.map((st) => (
                       <div key={st.index} className="flex items-center gap-2">
                         <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">
-                          Stage {st.index}: {st.name || 'unnamed'}
+                          {t('containerImages.dockerfileModal.stage', {
+                            index: st.index,
+                            name: st.name || t('containerImages.dockerfileModal.unnamed'),
+                          })}
                         </span>
-                        <span className="text-soc-muted">Base: {st.base_image}</span>
+                        <span className="text-soc-muted">
+                          {t('containerImages.dockerfileModal.base', {
+                            image: st.base_image ?? '',
+                          })}
+                        </span>
                         {st.is_runtime && (
                           <span className="px-1 py-0.2 bg-green-500/20 text-green-400 text-[10px] rounded">
-                            RUNTIME
+                            {t('containerImages.dockerfileModal.runtime')}
                           </span>
                         )}
                       </div>
@@ -428,18 +446,30 @@ export const ContainerImagesPage: React.FC = () => {
                 </div>
 
                 <div className="p-3 bg-soc-elevated rounded border border-soc-border space-y-2">
-                  <div className="text-soc-secondary font-semibold">Package Installations:</div>
+                  <div className="text-soc-secondary font-semibold">
+                    {t('containerImages.dockerfileModal.packages')}
+                  </div>
                   {dockerfileResult.package_installations.length === 0 ? (
                     <div className="text-soc-muted">
-                      No explicit package manager commands detected.
+                      {t('containerImages.dockerfileModal.noPackages')}
                     </div>
                   ) : (
                     <div className="space-y-1">
                       {dockerfileResult.package_installations.map((pkg, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-soc-primary">
-                          <span className="text-purple-400">[{String(pkg.manager || 'run')}]</span>
+                          <span className="text-purple-400">
+                            [
+                            {String(
+                              pkg.manager || t('containerImages.dockerfileModal.defaultManager'),
+                            )}
+                            ]
+                          </span>
                           <span>{String(pkg.packages || '')}</span>
-                          <span className="text-soc-muted">(line {String(pkg.line || '')})</span>
+                          <span className="text-soc-muted">
+                            {t('containerImages.dockerfileModal.line', {
+                              line: String(pkg.line || ''),
+                            })}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -448,10 +478,12 @@ export const ContainerImagesPage: React.FC = () => {
 
                 <div className="p-3 bg-soc-elevated rounded border border-soc-border space-y-2">
                   <div className="text-soc-secondary font-semibold">
-                    Dependency Manifests Referenced:
+                    {t('containerImages.dockerfileModal.manifests')}
                   </div>
                   {dockerfileResult.dependency_manifests.length === 0 ? (
-                    <div className="text-soc-muted">No package manifests copied or referenced.</div>
+                    <div className="text-soc-muted">
+                      {t('containerImages.dockerfileModal.noManifests')}
+                    </div>
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {dockerfileResult.dependency_manifests.map((mf, i) => (
@@ -471,13 +503,13 @@ export const ContainerImagesPage: React.FC = () => {
                     onClick={() => setDockerfileResult(null)}
                     className="px-3 py-1.5 rounded text-xs bg-soc-elevated hover:bg-soc-surface border border-soc-border text-soc-primary"
                   >
-                    Analyze Another
+                    {t('containerImages.dockerfileModal.analyzeAnother')}
                   </button>
                   <button
                     onClick={() => setIsDockerfileModalOpen(false)}
                     className="px-3 py-1.5 rounded text-xs bg-blue-600 hover:bg-blue-500 text-white"
                   >
-                    Done
+                    {t('containerImages.dockerfileModal.done')}
                   </button>
                 </div>
               </div>

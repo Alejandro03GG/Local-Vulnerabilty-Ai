@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@/components/ui/Toast';
+import { LanguageProvider } from '@/i18n';
 import { ContainerImagesPage } from '@/pages/ContainerImagesPage';
 import { ImageDetailPage } from '@/pages/ImageDetailPage';
 import * as imagesApiModule from '@/services/api/images';
@@ -76,15 +77,17 @@ describe('Container Scanning Pages (Etapa 17)', () => {
       defaultOptions: { queries: { retry: false } },
     });
     return render(
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <MemoryRouter initialEntries={[initialRoute]}>
-            <Routes>
-              <Route path={path} element={element} />
-            </Routes>
-          </MemoryRouter>
-        </ToastProvider>
-      </QueryClientProvider>,
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <ToastProvider>
+            <MemoryRouter initialEntries={[initialRoute]}>
+              <Routes>
+                <Route path={path} element={element} />
+              </Routes>
+            </MemoryRouter>
+          </ToastProvider>
+        </QueryClientProvider>
+      </LanguageProvider>,
     );
   };
 

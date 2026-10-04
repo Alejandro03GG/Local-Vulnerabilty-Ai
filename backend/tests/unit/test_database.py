@@ -216,7 +216,7 @@ class TestVulnerabilityRepository:
             ],
         )
 
-        # Second upsert should replace
+        # Second upsert with prune_missing replaces full-feed snapshot (KEV semantics)
         await vuln_repo.upsert_vulnerabilities(
             source.id,
             [
@@ -227,6 +227,7 @@ class TestVulnerabilityRepository:
                     product="New",
                 )
             ],
+            prune_missing=True,
         )
 
         all_vulns = await vuln_repo.get_all_by_source(source.id)

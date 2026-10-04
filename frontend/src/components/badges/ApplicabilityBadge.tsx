@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle, HelpCircle, ShieldAlert, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { ApplicabilityType } from '@/types';
 
 interface ApplicabilityBadgeProps {
@@ -9,6 +10,7 @@ interface ApplicabilityBadgeProps {
 }
 
 export const ApplicabilityBadge: React.FC<ApplicabilityBadgeProps> = ({ status, className }) => {
+  const { t } = useI18n();
   const normalized = (status || '').toUpperCase();
   switch (normalized) {
     case 'LIKELY_AFFECTED':
@@ -22,7 +24,7 @@ export const ApplicabilityBadge: React.FC<ApplicabilityBadgeProps> = ({ status, 
           data-testid="badge-likely-affected"
         >
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-400" aria-hidden="true" />
-          <span>LIKELY_AFFECTED</span>
+          <span>{t('badges.applicability.likelyAffected')}</span>
         </span>
       );
 
@@ -37,7 +39,7 @@ export const ApplicabilityBadge: React.FC<ApplicabilityBadgeProps> = ({ status, 
           data-testid="badge-likely-not-affected"
         >
           <CheckCircle className="w-3.5 h-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
-          <span>LIKELY_NOT_AFFECTED</span>
+          <span>{t('badges.applicability.likelyNotAffected')}</span>
         </span>
       );
 
@@ -52,7 +54,7 @@ export const ApplicabilityBadge: React.FC<ApplicabilityBadgeProps> = ({ status, 
           data-testid="badge-requires-review"
         >
           <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-400" aria-hidden="true" />
-          <span>REQUIRES_REVIEW</span>
+          <span>{t('badges.applicability.requiresReview')}</span>
         </span>
       );
 
@@ -67,7 +69,7 @@ export const ApplicabilityBadge: React.FC<ApplicabilityBadgeProps> = ({ status, 
           data-testid="badge-detected"
         >
           <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-purple-400" aria-hidden="true" />
-          <span>DETECTED</span>
+          <span>{t('badges.applicability.detected')}</span>
         </span>
       );
 
@@ -83,7 +85,9 @@ export const ApplicabilityBadge: React.FC<ApplicabilityBadgeProps> = ({ status, 
           data-testid="badge-unknown"
         >
           <HelpCircle className="w-3.5 h-3.5 shrink-0 text-slate-400" aria-hidden="true" />
-          <span>{status || 'UNKNOWN'}</span>
+          <span>
+            {!status || normalized === 'UNKNOWN' ? t('badges.applicability.unknown') : status}
+          </span>
         </span>
       );
   }
