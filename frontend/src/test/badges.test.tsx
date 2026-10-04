@@ -51,6 +51,15 @@ describe('Semantic Badges', () => {
 
     rerender(<SourceStatusBadge isAvailable={false} />);
     expect(screen.getByText('UNAVAILABLE')).toBeInTheDocument();
+
+    rerender(<SourceStatusBadge status="active" />);
+    expect(screen.getByTestId('badge-source-available')).toBeInTheDocument();
+
+    rerender(<SourceStatusBadge status="syncing" />);
+    expect(screen.getByTestId('badge-source-syncing')).toBeInTheDocument();
+
+    rerender(<SourceStatusBadge status="error" />);
+    expect(screen.getByTestId('badge-source-error')).toBeInTheDocument();
   });
 
   it('renders human review badge', () => {

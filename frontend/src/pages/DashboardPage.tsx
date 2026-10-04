@@ -191,7 +191,7 @@ export const DashboardPage: React.FC = () => {
       />
 
       {/* Top Telemetry Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
         <Metric
           label={t('dashboard.metrics.projects')}
           value={totalProjects}
@@ -237,7 +237,7 @@ export const DashboardPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <div className="p-3.5 rounded bg-soc-elevated border border-soc-border">
               <RiskBadge level="CRITICAL" />
               <div className="text-2xl font-bold font-mono text-red-400 mt-2">
@@ -299,18 +299,20 @@ export const DashboardPage: React.FC = () => {
               sources.map((src) => (
                 <div
                   key={src.id}
-                  className="p-3 rounded bg-soc-elevated border border-soc-border flex items-center justify-between"
+                  className="p-3 rounded bg-soc-elevated border border-soc-border flex items-center justify-between gap-3 min-w-0"
                 >
-                  <div>
-                    <span className="text-xs font-semibold text-soc-primary block">{src.name}</span>
-                    <span className="text-[10px] font-mono text-soc-muted block">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-semibold text-soc-primary block truncate">
+                      {src.name}
+                    </span>
+                    <span className="text-[10px] font-mono text-soc-muted block truncate">
                       {t('dashboard.sources.records', {
                         count: src.record_count.toLocaleString(dateLocale),
                         date: formatDate(src.last_sync, dateLocale),
                       })}
                     </span>
                   </div>
-                  <SourceStatusBadge isAvailable={src.is_available} />
+                  <SourceStatusBadge status={src.status} isAvailable={src.is_available} />
                 </div>
               ))
             ) : (

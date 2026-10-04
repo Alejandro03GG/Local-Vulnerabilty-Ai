@@ -104,15 +104,15 @@ export const es: MessageTree<typeof en> = {
       unknown: 'DESCONOCIDO',
     },
     applicability: {
-      likelyAffected: 'PROBABLEMENTE_AFECTADO',
-      likelyNotAffected: 'PROBABLEMENTE_NO_AFECTADO',
-      requiresReview: 'REQUIERE_REVISIÓN',
-      detected: 'DETECTADO',
-      unknown: 'DESCONOCIDO',
+      likelyAffected: 'Prob. afectado',
+      likelyNotAffected: 'Prob. no afectado',
+      requiresReview: 'Requiere revisión',
+      detected: 'Detectado',
+      unknown: 'Desconocido',
     },
     review: {
-      required: 'REVISIÓN HUMANA REQUERIDA',
-      notRequired: 'SIN REVISIÓN NECESARIA',
+      required: 'Revisión requerida',
+      notRequired: 'Sin revisión',
     },
     scanStatus: {
       running: 'EN_EJECUCIÓN',
@@ -121,8 +121,11 @@ export const es: MessageTree<typeof en> = {
       failed: 'FALLIDO',
     },
     sourceStatus: {
-      available: 'DISPONIBLE',
-      unavailable: 'NO DISPONIBLE',
+      available: 'Activa',
+      unavailable: 'Inactiva',
+      syncing: 'Sincronizando',
+      error: 'Error',
+      neverSynced: 'Sin sync',
     },
   },
   intelligence: {

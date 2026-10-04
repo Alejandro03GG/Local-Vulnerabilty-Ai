@@ -140,10 +140,18 @@ export function DataTable<T>({
               )}
             >
               {columns.map((col) => (
-                <td key={col.key} className={cn('px-4 py-3 align-middle', col.className)}>
-                  {col.render
-                    ? col.render(item)
-                    : String((item as Record<string, unknown>)[col.key] ?? '—')}
+                <td
+                  key={col.key}
+                  className={cn(
+                    'px-3 sm:px-4 py-3 align-middle min-w-0 max-w-[18rem]',
+                    col.className,
+                  )}
+                >
+                  <div className="min-w-0 max-w-full overflow-hidden">
+                    {col.render
+                      ? col.render(item)
+                      : String((item as Record<string, unknown>)[col.key] ?? '—')}
+                  </div>
                 </td>
               ))}
             </tr>

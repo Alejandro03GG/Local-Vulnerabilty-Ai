@@ -122,6 +122,9 @@ export const en = {
     sourceStatus: {
       available: 'AVAILABLE',
       unavailable: 'UNAVAILABLE',
+      syncing: 'SYNCING',
+      error: 'ERROR',
+      neverSynced: 'NEVER SYNCED',
     },
   },
   intelligence: {

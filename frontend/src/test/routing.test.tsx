@@ -64,6 +64,7 @@ describe('Application Routing and Core Pages (Etapa 10 §10)', () => {
         id: 'osv',
         name: 'OSV',
         source_type: 'ecosystem',
+        status: 'active',
         is_available: true,
         last_sync: '2026-10-01T00:00:00Z',
         record_count: 5000,

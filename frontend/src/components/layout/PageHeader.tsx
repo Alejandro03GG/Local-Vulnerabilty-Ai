@@ -31,26 +31,34 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         className,
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 min-w-0">
         {backTo && (
           <button
             onClick={() => navigate(backTo)}
-            className="p-1.5 rounded bg-soc-elevated border border-soc-border hover:bg-soc-highlight text-soc-secondary hover:text-white transition-colors mt-0.5"
+            className="p-1.5 rounded bg-soc-elevated border border-soc-border hover:bg-soc-highlight text-soc-secondary hover:text-white transition-colors mt-0.5 shrink-0"
             aria-label={t('pageHeader.goBack')}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
         )}
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl font-bold tracking-tight text-soc-primary">{title}</h1>
-            {badge && <div>{badge}</div>}
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-soc-primary break-words">
+              {title}
+            </h1>
+            {badge && <div className="min-w-0 max-w-full">{badge}</div>}
           </div>
-          {subtitle && <p className="text-xs text-soc-secondary mt-1 font-sans">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-xs text-soc-secondary mt-1 font-sans break-words">{subtitle}</p>
+          )}
         </div>
       </div>
 
-      {actions && <div className="flex items-center gap-2.5 shrink-0">{actions}</div>}
+      {actions && (
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto md:shrink-0">
+          {actions}
+        </div>
+      )}
     </div>
   );
 };

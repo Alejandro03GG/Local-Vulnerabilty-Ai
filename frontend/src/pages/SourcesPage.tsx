@@ -96,7 +96,7 @@ export const SourcesPage: React.FC = () => {
                       <Database className="w-5 h-5 text-blue-400" />
                       <h3 className="font-bold text-sm text-soc-primary">{src.name}</h3>
                     </div>
-                    <SourceStatusBadge isAvailable={src.is_available} />
+                    <SourceStatusBadge status={src.status} isAvailable={src.is_available} />
                   </div>
 
                   <div className="space-y-2 text-xs font-mono text-soc-secondary">

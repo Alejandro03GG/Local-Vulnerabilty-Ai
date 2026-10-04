@@ -207,13 +207,25 @@ export interface Match {
   conflicts: SourceConflict[];
 }
 
+export type SourceStatus =
+  | 'active'
+  | 'syncing'
+  | 'error'
+  | 'never_synced'
+  | 'disabled';
+
 export interface Source {
   id: string;
   name: string;
   source_type: string;
-  is_available: boolean;
+  url?: string;
+  /** Backend source lifecycle status (API contract). */
+  status: SourceStatus | string;
   last_sync: string | null;
   record_count: number;
+  last_error?: string | null;
+  /** @deprecated Prefer `status`; kept for older mocks. */
+  is_available?: boolean;
   error_message?: string | null;
 }
 

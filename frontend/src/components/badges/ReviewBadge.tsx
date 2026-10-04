@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserCheck, ShieldAlert } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { badgeClassName } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
 interface ReviewBadgeProps {
@@ -12,32 +12,31 @@ export const ReviewBadge: React.FC<ReviewBadgeProps> = ({ requiresReview, classN
   const { t } = useI18n();
 
   if (requiresReview) {
+    const label = t('badges.review.required');
     return (
       <span
-        className={cn(
-          'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium',
-          'bg-amber-500/15 text-amber-400 border border-amber-500/30',
+        className={badgeClassName(
+          'bg-amber-500/15 text-amber-400 border-amber-500/30',
           className,
         )}
         data-testid="badge-review-required"
+        title={label}
       >
-        <ShieldAlert className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
-        <span>{t('badges.review.required')}</span>
+        <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" aria-hidden="true" />
+        <span className="min-w-0">{label}</span>
       </span>
     );
   }
 
+  const label = t('badges.review.notRequired');
   return (
     <span
-      className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium',
-        'bg-slate-500/10 text-slate-400 border border-slate-500/20',
-        className,
-      )}
+      className={badgeClassName('bg-slate-500/10 text-slate-400 border-slate-500/20', className)}
       data-testid="badge-review-not-required"
+      title={label}
     >
-      <UserCheck className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
-      <span>{t('badges.review.notRequired')}</span>
+      <UserCheck className="w-3.5 h-3.5 shrink-0 mt-0.5 text-slate-400" aria-hidden="true" />
+      <span className="min-w-0">{label}</span>
     </span>
   );
 };

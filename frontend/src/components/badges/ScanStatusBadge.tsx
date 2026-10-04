@@ -1,6 +1,6 @@
 import React from 'react';
 import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { badgeClassName } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ScanStatus } from '@/types';
 
@@ -13,77 +13,80 @@ export const ScanStatusBadge: React.FC<ScanStatusBadgeProps> = ({ status, classN
   const { t } = useI18n();
 
   switch (status.toLowerCase()) {
-    case 'running':
+    case 'running': {
+      const label = t('badges.scanStatus.running');
       return (
         <span
-          className={cn(
-            'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium',
-            'bg-blue-500/15 text-blue-400 border border-blue-500/30',
-            className,
-          )}
+          className={badgeClassName('bg-blue-500/15 text-blue-400 border-blue-500/30', className)}
           data-testid="badge-status-running"
+          title={label}
         >
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" aria-hidden="true" />
-          <span>{t('badges.scanStatus.running')}</span>
+          <Loader2 className="w-3.5 h-3.5 shrink-0 mt-0.5 animate-spin text-blue-400" aria-hidden="true" />
+          <span className="min-w-0">{label}</span>
         </span>
       );
-
-    case 'pending':
+    }
+    case 'pending': {
+      const label = t('badges.scanStatus.pending');
       return (
         <span
-          className={cn(
-            'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium',
-            'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30',
+          className={badgeClassName(
+            'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
             className,
           )}
           data-testid="badge-status-pending"
+          title={label}
         >
-          <Clock className="w-3.5 h-3.5 text-yellow-400" aria-hidden="true" />
-          <span>{t('badges.scanStatus.pending')}</span>
+          <Clock className="w-3.5 h-3.5 shrink-0 mt-0.5 text-yellow-400" aria-hidden="true" />
+          <span className="min-w-0">{label}</span>
         </span>
       );
-
-    case 'completed':
+    }
+    case 'completed': {
+      const label = t('badges.scanStatus.completed');
       return (
         <span
-          className={cn(
-            'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium',
-            'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+          className={badgeClassName(
+            'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
             className,
           )}
           data-testid="badge-status-completed"
+          title={label}
         >
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-          <span>{t('badges.scanStatus.completed')}</span>
+          <CheckCircle2
+            className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400"
+            aria-hidden="true"
+          />
+          <span className="min-w-0">{label}</span>
         </span>
       );
-
-    case 'failed':
+    }
+    case 'failed': {
+      const label = t('badges.scanStatus.failed');
       return (
         <span
-          className={cn(
-            'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium',
-            'bg-rose-500/15 text-rose-400 border border-rose-500/30',
-            className,
-          )}
+          className={badgeClassName('bg-rose-500/15 text-rose-400 border-rose-500/30', className)}
           data-testid="badge-status-failed"
+          title={label}
         >
-          <XCircle className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
-          <span>{t('badges.scanStatus.failed')}</span>
+          <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-rose-400" aria-hidden="true" />
+          <span className="min-w-0">{label}</span>
         </span>
       );
-
-    default:
+    }
+    default: {
+      const label = status.toUpperCase();
       return (
         <span
-          className={cn(
-            'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium',
-            'bg-slate-500/15 text-slate-400 border border-slate-500/30',
+          className={badgeClassName(
+            'bg-slate-500/15 text-slate-400 border-slate-500/30',
             className,
           )}
+          title={label}
         >
-          <span>{status.toUpperCase()}</span>
+          <span className="min-w-0">{label}</span>
         </span>
       );
+    }
   }
 };

@@ -75,7 +75,7 @@ export const MatchDetailPage: React.FC = () => {
     Boolean(match.risk_assessment?.requires_human_review);
 
   return (
-    <div className="space-y-6" data-testid="match-detail-page">
+    <div className="space-y-6 min-w-0 max-w-full" data-testid="match-detail-page">
       <PageHeader
         title={t('matchDetail.title', {
           name: comp?.name || t('matchDetail.packageFallback'),
@@ -110,69 +110,69 @@ export const MatchDetailPage: React.FC = () => {
         className="p-5 rounded-lg border border-soc-border bg-soc-surface space-y-4"
         data-testid="match-overview-section"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-soc-border">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-blue-400" />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-soc-border">
+          <div className="flex items-center gap-2 min-w-0">
+            <Layers className="w-4 h-4 text-blue-400 shrink-0" />
             <h2 className="text-sm font-semibold text-soc-primary">
               {t('matchDetail.overviewTitle')}
             </h2>
           </div>
-          <span className="text-[11px] font-mono text-soc-muted">
+          <span className="text-[11px] font-mono text-soc-muted shrink-0">
             {t('matchDetail.correlatedAt', { date: formatDate(match.matched_at, dateLocale) })}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="p-3 rounded bg-soc-elevated border border-soc-border">
-            <span className="text-[10px] font-mono uppercase text-soc-secondary block">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-3">
+          <div className="p-3 rounded bg-soc-elevated border border-soc-border min-w-0 overflow-hidden">
+            <span className="text-[10px] font-mono uppercase text-soc-secondary block truncate">
               {t('matchDetail.component')}
             </span>
-            <span className="font-mono text-xs font-bold text-soc-primary mt-1 block truncate">
+            <span className="font-mono text-xs font-bold text-soc-primary mt-1.5 block truncate">
               {comp?.name || '—'}
             </span>
           </div>
 
-          <div className="p-3 rounded bg-soc-elevated border border-soc-border">
-            <span className="text-[10px] font-mono uppercase text-soc-secondary block">
+          <div className="p-3 rounded bg-soc-elevated border border-soc-border min-w-0 overflow-hidden">
+            <span className="text-[10px] font-mono uppercase text-soc-secondary block truncate">
               {t('matchDetail.installedVersion')}
             </span>
-            <span className="font-mono text-xs font-bold text-blue-400 mt-1 block truncate">
+            <span className="font-mono text-xs font-bold text-blue-400 mt-1.5 block truncate">
               {comp?.version || '—'}
             </span>
           </div>
 
-          <div className="p-3 rounded bg-soc-elevated border border-soc-border">
-            <span className="text-[10px] font-mono uppercase text-soc-secondary block">
+          <div className="p-3 rounded bg-soc-elevated border border-soc-border min-w-0 overflow-hidden">
+            <span className="text-[10px] font-mono uppercase text-soc-secondary block truncate">
               {t('matchDetail.ecosystem')}
             </span>
-            <span className="font-mono text-xs font-bold text-soc-primary mt-1 block uppercase truncate">
+            <span className="font-mono text-xs font-bold text-soc-primary mt-1.5 block uppercase truncate">
               {comp?.ecosystem || '—'}
             </span>
           </div>
 
-          <div className="p-3 rounded bg-soc-elevated border border-soc-border">
-            <span className="text-[10px] font-mono uppercase text-soc-secondary block">
+          <div className="p-3 rounded bg-soc-elevated border border-soc-border min-w-0 overflow-hidden">
+            <span className="text-[10px] font-mono uppercase text-soc-secondary block truncate">
               {t('matchDetail.applicability')}
             </span>
-            <div className="mt-1">
+            <div className="mt-1.5 min-w-0 max-w-full">
               <ApplicabilityBadge status={match.applicability} />
             </div>
           </div>
 
-          <div className="p-3 rounded bg-soc-elevated border border-soc-border">
-            <span className="text-[10px] font-mono uppercase text-soc-secondary block">
+          <div className="p-3 rounded bg-soc-elevated border border-soc-border min-w-0 overflow-hidden">
+            <span className="text-[10px] font-mono uppercase text-soc-secondary block truncate">
               {t('matchDetail.riskPosture')}
             </span>
-            <div className="mt-1">
+            <div className="mt-1.5 min-w-0 max-w-full">
               <RiskBadge level={match.risk_assessment?.risk_level || 'UNKNOWN'} />
             </div>
           </div>
 
-          <div className="p-3 rounded bg-soc-elevated border border-soc-border">
-            <span className="text-[10px] font-mono uppercase text-soc-secondary block">
+          <div className="p-3 rounded bg-soc-elevated border border-soc-border min-w-0 overflow-hidden">
+            <span className="text-[10px] font-mono uppercase text-soc-secondary block truncate">
               {t('matchDetail.humanReview')}
             </span>
-            <div className="mt-1">
+            <div className="mt-1.5 min-w-0 max-w-full">
               <ReviewBadge requiresReview={requiresReview} />
             </div>
           </div>
@@ -180,12 +180,12 @@ export const MatchDetailPage: React.FC = () => {
 
         {/* Vulnerability advisory reference link */}
         {vuln && (
-          <div className="p-3.5 rounded bg-soc-elevated/40 border border-soc-border flex items-center justify-between">
-            <div>
-              <span className="font-mono text-xs font-bold text-rose-400 block">
+          <div className="p-3.5 rounded bg-soc-elevated/40 border border-soc-border flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
+            <div className="min-w-0">
+              <span className="font-mono text-xs font-bold text-rose-400 block truncate">
                 {vulnerabilityDisplayId(vuln)}
               </span>
-              <p className="text-xs text-soc-secondary mt-0.5 font-sans line-clamp-1">
+              <p className="text-xs text-soc-secondary mt-0.5 font-sans line-clamp-2 break-words">
                 {vuln.vulnerability_name ||
                   vuln.short_description ||
                   t('matchDetail.advisoryFallback')}
@@ -193,7 +193,7 @@ export const MatchDetailPage: React.FC = () => {
             </div>
             <button
               onClick={() => navigate(`/vulnerabilities/${vuln.id}`)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono text-blue-400 hover:text-white rounded bg-soc-elevated border border-soc-border transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 text-xs font-mono text-blue-400 hover:text-white rounded bg-soc-elevated border border-soc-border transition-colors shrink-0 w-full sm:w-auto"
             >
               <span>{t('matchDetail.advisoryDetail')}</span>
               <ExternalLink className="w-3 h-3" />
@@ -208,13 +208,13 @@ export const MatchDetailPage: React.FC = () => {
         className="p-5 rounded-lg border border-soc-border bg-soc-surface space-y-4"
         data-testid="dependency-intelligence-section"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-soc-border">
-          <div className="flex items-center gap-2">
-            <GitFork className="w-4 h-4 text-cyan-400" />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-soc-border">
+          <div className="flex items-center gap-2 min-w-0">
+            <GitFork className="w-4 h-4 text-cyan-400 shrink-0" />
             <h2 className="text-sm font-semibold text-soc-primary">{t('matchDetail.depTitle')}</h2>
           </div>
           <span
-            className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${
+            className={`inline-flex max-w-full font-mono text-[10px] font-bold px-2 py-0.5 rounded border whitespace-normal break-words ${
               (comp?.is_direct ?? comp?.dependency_type === 'direct')
                 ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30'
                 : 'text-purple-400 bg-purple-500/10 border-purple-500/30'
@@ -226,8 +226,8 @@ export const MatchDetailPage: React.FC = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="p-3 rounded bg-soc-elevated border border-soc-border">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="p-3 rounded bg-soc-elevated border border-soc-border min-w-0 overflow-hidden">
             <span className="text-[10px] font-mono uppercase text-soc-secondary block">
               {t('matchDetail.originSource')}
             </span>

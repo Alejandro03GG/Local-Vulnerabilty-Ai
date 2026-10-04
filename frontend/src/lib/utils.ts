@@ -40,3 +40,14 @@ export function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—';
   return `${Math.round(value * 100)}%`;
 }
+
+/** Shared badge shell: never overflows parent cards/table cells. */
+export function badgeClassName(...extra: Array<string | undefined>): string {
+  return cn(
+    'inline-flex max-w-full min-w-0 items-center gap-1 rounded border px-2 py-0.5 overflow-hidden',
+    'text-[10px] sm:text-xs font-medium font-mono leading-snug',
+    'whitespace-nowrap',
+    ...extra,
+  );
+}
+
