@@ -1,6 +1,22 @@
 # Changelog
 
-## [Unreleased] — Stage 19.1 Product Hardening
+All notable changes to the **Local Vulnerability AI** platform are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [Unreleased]
+
+## [1.1.1] - 2026-10-04
+
+### Fixed
+- Frontend source badges now read API `status` (`active` / `syncing` / `error` / `never_synced`) instead of the non-existent `is_available` field, so synced sources no longer show as unavailable.
+- Badge labels wrap/overflow less on dense SOC layouts; Spanish applicability labels shortened for narrow columns.
+- API CORS defaults include common Vite ports (`5174`–`5176`) so local UI on alternate ports is not blocked as "API OFFLINE".
+
+## [1.1.0] - 2026-10-04
 
 ### Fixed
 - Nullable `cve_id` end-to-end (API/frontend/export) for GHSA/RUSTSEC-only advisories (H17)
@@ -20,16 +36,6 @@
 
 ### Added
 - Frontend branding assets and EN/ES i18n (ported from Stage 19 lab validation)
-
-
-All notable changes to the **Local Vulnerability AI** platform are documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
----
-
-## [Unreleased]
 
 ## [1.0.1] - 2026-10-04
 

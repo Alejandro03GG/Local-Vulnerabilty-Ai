@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "local-vulnerability-ai"
-version = "1.0.1"
+version = "1.1.1"
 description = "An open-source local vulnerability analysis platform combining deterministic matching with local AI analysis."
 readme = "README.md"
 license = "MIT"

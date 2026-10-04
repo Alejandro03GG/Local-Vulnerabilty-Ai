@@ -61,7 +61,7 @@ Display the canonical application version:
 
 ```bash
 vuln-ai version
-# Output: Local Vulnerability AI 1.0.1
+# Output: Local Vulnerability AI 1.1.1
 ```
 
 or via root flags:
