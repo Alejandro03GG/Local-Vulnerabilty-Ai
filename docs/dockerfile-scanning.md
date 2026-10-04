@@ -47,10 +47,10 @@ Detects instructions copying software manifests from the host into the container
 
 ```bash
 # Scan a local Dockerfile
-vuln-ai image dockerfile Dockerfile
+vuln-ai image scan Dockerfile
 
 # Scan with custom output format
-vuln-ai image dockerfile ./deploy/Dockerfile.prod --format json
+vuln-ai image scan ./deploy/Dockerfile.prod --format json
 ```
 
 ### Example CLI Output

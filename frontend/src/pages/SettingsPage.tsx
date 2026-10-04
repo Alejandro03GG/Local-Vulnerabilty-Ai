@@ -54,7 +54,8 @@ export const SettingsPage: React.FC = () => {
                 ) : health ? (
                   <span className="flex items-center gap-1.5 text-emerald-400">
                     <ShieldCheck className="w-4 h-4" />
-                    Operational ({health.version || 'v1.0.0'}) • DB: {health.database || 'Active'}
+                    Operational ({health.version || 'unavailable'}) • DB:{' '}
+                    {health.database || 'Active'}
                   </span>
                 ) : (
                   <span className="text-rose-400">Unreachable</span>

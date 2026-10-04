@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+from vuln_ai import __version__
 from vuln_ai.core.graph import (
     DependencyEdge,
     DependencyGraph,
@@ -71,7 +72,7 @@ def test_cyclonedx_minimum_valid_document_and_metadata():
     meta = doc["metadata"]
     assert "timestamp" in meta
     assert meta["tools"][0]["name"] == "Local Vulnerability AI"
-    assert meta["tools"][0]["version"] == "0.1.0"
+    assert meta["tools"][0]["version"] == __version__
     assert meta["component"]["name"] == "sample-project"
     assert meta["component"]["type"] == "application"
 

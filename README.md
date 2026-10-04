@@ -1,394 +1,366 @@
 # Local Vulnerability AI
 
-> An open-source, local-first vulnerability intelligence and Software Composition Analysis (SCA) platform combining deterministic multi-source version matching with local contextual AI analysis and an auditable Risk Engine.
+> An open-source, local-first vulnerability analysis and Software Composition Analysis (SCA) platform combining deterministic multi-source version matching with local contextual AI analysis, container/image scanning, and an auditable Risk & Policy Engine.
 
 [![Python](https://img.shields.io/badge/Python-3.12%20%7C%203.13%20%7C%203.14-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Coverage](https://img.shields.io/badge/Coverage-96%25-success)](backend/)
+[![Coverage](https://img.shields.io/badge/Coverage-95%25+-success)](backend/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status: Release Ready](https://img.shields.io/badge/Status-v1.0.0%20Release%20Ready-blue.svg)](CHANGELOG.md)
 
 ---
 
-## 1. What is Local Vulnerability AI?
+## Why?
 
-Modern applications rely on hundreds of open-source software dependencies. Keeping them secure often forces teams into proprietary cloud platforms that demand access to private source code and code repositories.
+Modern software development relies heavily on open-source dependencies and container images. However, securing this software supply chain often forces organizations to upload their proprietary source code, private manifests, or container archives to closed third-party cloud services.
 
-**Local Vulnerability AI** solves this problem by running entirely on your local infrastructure:
+**Local Vulnerability AI** was built to solve this challenge by running **100% locally on your own infrastructure**:
 
-- **Local-First & Private**: Scans software manifests, correlates advisories, and stores findings locally. Your source code **never leaves your machine**.
-- **Multi-Source Intelligence**: Synthesizes vulnerability advisories from **OSV**, **NVD (CVE 2.0)**, and **CISA KEV (Known Exploited Vulnerabilities)** into a unified canonical catalog.
-- **Deterministic Precedence**: Dependency applicability is computed using formal version semantics (PEP 440, SemVer, Maven). Generative models do **not** invent vulnerabilities or dictate risk conclusions.
-- **Contextual AI Decision Support**: Integrates local LLMs via [Ollama](https://ollama.ai/) (`llama3.2`, `systemone`) strictly for plain-English explanations and probabilistic triage assistance.
-- **Security Operations Console**: A dark-first React console designed for security analysts, featuring multi-source conflict panels, metric strips, and end-to-end audit traces.
+1. **Zero Source Code Exfiltration**: Scans manifests, lockfiles, and container archives locally. Your private source code never leaves your workstation or CI/CD runner.
+2. **Multi-Source Truth Without Cloud Lock-in**: Correlates OSV, NIST NVD, and CISA KEV into a single canonical catalog stored locally in SQLite.
+3. **Deterministic Math Over Generative Hallucinations**: Version ranges are evaluated with exact mathematical interval logic (PEP 440, SemVer, Maven, Debian, Alpine, RPM). AI is **never** given authority to invent CVEs, alter applicability, or override deterministic policy gates.
+4. **Contextual AI on Your Terms**: Optional local LLM support via Ollama runs on `localhost` to provide plain-English summaries and triage assistance without cloud API costs or data leakage.
+5. **Single Consistent Security Engine**: One unified pipeline evaluating dependencies, container layers, policies, suppressions, and standard security exports (SARIF, CycloneDX, SPDX).
 
 ---
 
-## 2. System Architecture
+## Features
 
-The platform operates as a deterministic, decoupled security pipeline:
+Local Vulnerability AI 1.0.0 delivers a feature-complete, production-ready local security stack:
+
+- **Dependency Scanning**: Automatic discovery and parsing of Python (`requirements.txt`, `pyproject.toml`, `poetry.lock`), Node.js (`package.json`, `package-lock.json`, `pnpm-lock.yaml`), and Rust (`Cargo.toml`, `Cargo.lock`).
+- **Dependency Graph**: Directed acyclic graph tracking direct vs. transitive relationships, resolution depth, and multi-version package support (e.g. `lodash@3.x` and `lodash@4.x` coexisting).
+- **CISA KEV Integration**: Automated tracking of Known Exploited Vulnerabilities catalog with in-the-wild exploitation indicators and ransomware flags.
+- **OSV Intelligence**: Fast ecosystem advisory ingestion with exact `[introduced, fixed)` and `[introduced, limit)` version event ranges.
+- **NVD (CVE 2.0)**: Ingestion of CVSS v2/v3/v4 metrics, CWE classifications, and official NIST advisory metadata.
+- **Version-Aware Matching**: Formal interval math for PEP 440, SemVer 2.0, Cargo, Maven, and OS package versions (`deb`, `apk`, `rpm`).
+- **Canonical Applicability Vocabulary**: Evaluates components into strict canonical states: `LIKELY_AFFECTED`, `LIKELY_NOT_AFFECTED`, `REQUIRES_REVIEW`, `DETECTED`, and `UNKNOWN`. (The misleading status `VULNERABLE` is strictly prohibited).
+- **Multi-Source Conflict Resolution**: Detects divergent verdicts across sources (e.g. OSV affected vs NVD unaffected) and routes them conservatively to `REQUIRES_REVIEW`.
+- **Container Image Scanning**: Pure static OCI and Docker archive (`.tar`) inspection with layer extraction, whiteout handling (`.wh.*`, `.wh..wh..opq`), and OS package detection (Alpine APK, Debian/Ubuntu DPKG, Red Hat RPM).
+- **Dockerfile AST Lexer**: Static analysis of Dockerfile ASTs without executing builds, detecting multi-stage targets and package manager instructions.
+- **Deterministic Risk Engine**: Rule-based scoring evaluating KEV status, CVSS metrics, conflicts, and fallbacks with auditable `rule_ids`.
+- **Policy Engine**: Declarative `.vuln-ai.yaml` policies with multi-criteria conditions, action hierarchies (`BLOCK`, `REQUIRE_REVIEW`, `ACCEPT_RISK`, `ALLOW`), and deterministic CI exit codes.
+- **Suppression Management**: Auditable, time-bound vulnerability exemptions (`ACTIVE`, `EXPIRED`, `DISABLED`) with an injectable clock for testability. Findings are never deleted or hidden.
+- **Local AI (Ollama & SystemOne)**: Optional contextual plain-English remediation narratives via local Ollama (`llama3.2`) and fast triage classification (`SystemOne`). Fully optional with `--no-ai` fallback.
+- **Standard Exports**: Full export capabilities for SARIF 2.1.0, CycloneDX 1.5 JSON, and SPDX 2.3 JSON with container layer provenance.
+- **Command-Line Interface (CLI)**: Rich terminal outputs, machine-readable JSON on stdout, headless CI/CD execution, and system diagnostics (`vuln-ai doctor`).
+- **REST API**: Versioned FastAPI gateway (`/api/v1`) with OpenAPI Swagger UI, structured error formats, and request tracing.
+- **Web UI Console**: Dark-mode React 18 / TypeScript operations console with interactive dependency graphs, match detail cards, container image viewers, and global command menu (⌘K / Ctrl+K).
+
+---
+
+## Architecture
+
+The platform operates as a decoupled, deterministic security pipeline:
 
 ```text
-Target Project (Manifests & Lockfiles)
-   ├── Python: requirements.txt, pyproject.toml, poetry.lock
-   ├── Node.js: package.json, package-lock.json (npm), pnpm-lock.yaml (pnpm)
-   └── Rust: Cargo.toml, Cargo.lock
-   ↓
-Dependency Intelligence & Graph Engine (LOCKFILE > MANIFEST)
-   ├── Dependency Nodes & Directed Edges
-   ├── Direct vs. Transitive Classification
-   └── Multi-Version Package Support (e.g. lodash 3.x & 4.x)
-   ↓
-Resolved Components (Exact Version, Provenance Path, Scope)
-   ↓
-Canonical Vulnerability Catalog
-   ├── OSV (Ecosystem Advisories & Version Events)
-   ├── NVD (CVE Metadata, CVSS Scores, CWEs)
-   └── CISA KEV (Active In-the-Wild Exploitation)
-   ↓
-Version-Aware Matcher (PEP 440, SemVer 2.0, Cargo/Maven Comparators)
-   ↓
-Match Evidence ([introduced, fixed), [introduced, limit), KEV presence)
-   ↓
-Multi-Source Conflict Resolver (Discrepancy Detection & Categorization)
-   ↓
-Consolidated Applicability (LIKELY_AFFECTED | LIKELY_NOT_AFFECTED | REQUIRES_REVIEW | DETECTED)
-   ↓
-Local AI Analysis (Ollama / llama3.2) & SystemOne (Fast Inference, Supplementary)
-   ↓
-Deterministic Risk Engine (Rule-based evaluation: KEV, CVSS, Conflicts, Fallbacks)
-   ↓
-Risk Assessment (RiskLevel, requires_human_review, rule_ids, rationale)
-   ↓
-SQLite Database (Async SQLAlchemy with Write-Ahead Logging & Alembic)
-   ↓
-Declarative Policy & Suppression Engine (Etapa 16)
-   ├── Declarative Policy Rules (.vuln-ai.yaml, 1MB limit, safe parsing)
-   ├── Suppression Lifecycles (ACTIVE, EXPIRED, DISABLED with injectable Clock)
-   ├── Precedence: Active Suppression > Expired Alert > Rule Hierarchy > Thresholds > Default
-   └── Deterministic CI Gating: Exit 0 (Pass/Suppressed) vs Exit 1 (Policy Violation)
-   ↓
-Container & Image Scanning Engine (Etapa 17):
-   ├── Pure Static OCI & Docker Archive (.tar) Parser (No Daemon, Zero Execution Guarantee)
-   ├── Layer Extraction, Stacking, and Standard/Opaque Whiteout Resolution (.wh.*)
-   ├── Operating System Package Discovery: Alpine (APK), Debian/Ubuntu (DPKG), RHEL/CentOS (RPM)
-   ├── Recursive Application Dependency Discovery (Python, Node.js, Java, Rust, Go inside layers)
-   ├── Static Dockerfile AST Lexer & Multi-Stage Runtime Stage Resolution
-   └── Seamless Pipeline Reuse: OS & App components fed to single catalog, risk & policy engines
-   ↓
-Interfaces & Export Formats (ONE ENGINE, MULTIPLE INTERFACES):
-   ├── Official CLI (`vuln-ai scan`, `vuln-ai image scan/list/info/dockerfile`, `vuln-ai policy`)
-   ├── Policy & Suppression CLI (`vuln-ai policy validate/check`, `vuln-ai suppression list`)
-   ├── FastAPI REST Gateway (`/api/v1/policies`, `/api/v1/images`, `/api/v1/container/dockerfile/scan`)
-   ├── React Security Console (Container Images explorer, Layer detail view, Dockerfile AST analyzer)
-   └── Standard Export Formats:
-       ├── SARIF 2.1.0 (Native suppressions & policy metadata)
-       ├── CycloneDX 1.5 JSON (vuln_ai:policy_status & suppression properties)
-       └── SPDX 2.3 JSON (Preserves NOASSERTION licensing)
+CLI / API / Frontend
+        ↓
+    Scan Engine
+        ↓
+ Dependency Graph (+ Container ImageSource)
+        ↓
+     Catalog (CISA KEV, OSV, NVD)
+        ↓
+     Matcher (PEP 440, SemVer, Maven, DEB, APK, RPM)
+        ↓
+ Conflict Resolver (Discrepancy Detection & Categorization)
+        ↓
+ AI / SystemOne (Optional, Supplementary, Non-Authoritative)
+        ↓
+    Risk Engine (Deterministic Rules & Auditable Rule IDs)
+        ↓
+ Policy Engine (Declarative YAML, Actions: BLOCK / ALLOW)
+        ↓
+   Suppression (Active Exemption / Expired CI Failure)
+        ↓
+ SARIF 2.1.0 / CycloneDX 1.5 / SPDX 2.3
 ```
 
-For detailed architecture, container scanning, policy engine, and export format documentation, see [docs/architecture.md](docs/architecture.md), [docs/container-scanning.md](docs/container-scanning.md), [docs/dockerfile-scanning.md](docs/dockerfile-scanning.md), [docs/image-security.md](docs/image-security.md), [docs/security.md](docs/security.md), [docs/policy.md](docs/policy.md), [docs/suppressions.md](docs/suppressions.md), and [docs/export-formats.md](docs/export-formats.md).
+For complete architectural details, see **[docs/architecture.md](docs/architecture.md)**.
 
 ---
 
-## 3. Privacy & Data Boundaries
-
-We enforce strict data isolation guarantees:
-
-```text
-Source Code:            NEVER sent to AI models, NEVER transmitted over network
-Secrets & Credentials:  NEVER stored in local database
-Local AI Execution:     Ollama runs locally on loopback (http://localhost:11434)
-Database Storage:       Local SQLite database in user share directory (~/.local/share/vuln-ai/)
-Network Access:         Strictly outbound GET requests to public advisory feeds (OSV, NVD, CISA)
-Telemetry:              ZERO usage analytics, telemetry, or tracking pings
-```
-
-For complete privacy specifications, see [docs/privacy.md](docs/privacy.md).
-
----
-
-## 4. Canonical Applicability States
-
-The system evaluates vulnerability applicability into five canonical states. The status `VULNERABLE` is **strictly prohibited** across all layers because catalog presence is an indicator, not confirmed execution compromise:
-
-| Status | Badge Color | Description |
-| :--- | :--- | :--- |
-| `LIKELY_AFFECTED` | Rose | Installed version is mathematically confirmed within the advisory range $[introduced, fixed)$. |
-| `LIKELY_NOT_AFFECTED` | Emerald | Installed version is mathematically proven outside the affected version intervals. |
-| `REQUIRES_REVIEW` | Amber | Discrepancy detected between intelligence sources (e.g. OSV affected vs NVD unaffected). |
-| `DETECTED` | Purple | Component matched in catalog (e.g. CISA KEV) without declared version range bounds. |
-| `UNKNOWN` | Slate | Insufficient version data or unsupported packaging ecosystem. |
-
----
-
-## 5. Deterministic Risk Engine
-
-In Local Vulnerability AI, **AI is not the final authority**:
-
-- Risk classifications (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`) are computed exclusively by the rule-based **Deterministic Risk Engine** (`vuln_ai.risk.engine`).
-- Final assessments evaluate corroborated signals: version applicability, CISA KEV active exploitation, ransomware use, CVSS base scores, and multi-source conflicts.
-- Supplementary AI narratives and SystemOne probabilities are logged as contextual evidence but cannot override mathematical range evaluations.
-- Every assessment includes an auditable list of `rule_ids` (e.g. `KEV_CONFIRMED`, `SOURCE_APPLICABILITY_CONFLICT`, `AI_UNAVAILABLE_FALLBACK`).
-
----
-
-## 6. Quick Start (Local Setup in 7 Steps)
+## Installation
 
 ### Prerequisites
 
 - **Python**: `>= 3.12` (Python 3.12, 3.13, or 3.14)
 - **Node.js**: `>= 18.0.0` & **npm**: `>= 9.0.0`
 - **Git**
-- *(Optional)*: [Ollama](https://ollama.ai/) with `llama3.2` model installed locally.
+- *(Optional)*: [Ollama](https://ollama.ai/) with `llama3.2` running locally on port `11434` for contextual AI explanations.
 
----
-
-### Step 1: Clone & Backend Environment
+### Step 1: Clone Repository
 
 ```bash
 git clone https://github.com/Alejandro03GG/Local-Vulnerabilty-Ai.git
-cd Local-Vulnerabilty-Ai/backend
+cd Local-Vulnerabilty-Ai
+```
 
-# Create virtual environment
+### Step 2: Backend Setup
+
+```bash
+cd backend
+
+# Create and activate virtual environment
 python3 -m venv .venv
+source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 
-# Activate virtual environment
-# On Linux / macOS:
-source .venv/bin/activate
-# On Windows (cmd.exe):
-# .venv\Scripts\activate.bat
-# On Windows (PowerShell):
-# .venv\Scripts\Activate.ps1
-
-# Install backend package with development dependencies
+# Install backend in editable mode with development dependencies
 pip install -e ".[dev]"
-```
 
----
-
-### Step 2: Database Migrations
-
-Initialize the local SQLite database with all canonical tables using Alembic:
-
-```bash
+# Initialize local SQLite database schema
 alembic upgrade head
-```
 
----
-
-### Step 3: Environment Configuration
-
-```bash
-# Backend environment (defaults work out of the box)
+# Copy environment configuration
 cp .env.example .env
-
-# Frontend environment
-cd ../frontend
-cp .env.example .env
-cd ../backend
+cd ..
 ```
 
-#### Key Environment Variables Breakdown
-
-| Variable | Default | Required? | Purpose |
-| :--- | :--- | :--- | :--- |
-| `VULN_AI_DATABASE__URL` | `sqlite+aiosqlite:///.../vuln_ai.db` | **No** | SQLite database path with async driver |
-| `VULN_AI_API__PORT` | `8000` | **No** | FastAPI HTTP listen port |
-| `VULN_AI_API__CORS_ORIGINS` | `["http://localhost:3000","http://localhost:5173"]` | **No** | Allowed frontend browser origins |
-| `VULN_AI_AI__OLLAMA_BASE_URL` | `http://localhost:11434` | **No** (Optional) | Local Ollama endpoint |
-| `VULN_AI_AI__DEFAULT_MODEL` | `llama3.2` | **No** (Optional) | Model tag for contextual AI narratives |
-| `VULN_AI_NVD__API_KEY` | *(empty)* | **No** (Optional) | NIST NVD API key to bypass unauthenticated rate limits |
-| `VITE_API_BASE_URL` | `http://localhost:8000` | **No** | Frontend gateway endpoint |
-
----
-
-### Step 4: Start FastAPI Backend Gateway
+### Step 3: Frontend Setup
 
 ```bash
-# In backend/ with .venv active:
-uvicorn vuln_ai.api.main:app --reload --port 8000
-```
-
-- **API Base**: `http://localhost:8000`
-- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-- **Liveness Probe**: [http://localhost:8000/health](http://localhost:8000/health)
-- **Readiness Probe**: [http://localhost:8000/health/ready](http://localhost:8000/health/ready)
-
----
-
-### Step 5: Frontend Setup
-
-Open a second terminal window:
-
-```bash
-cd Local-Vulnerabilty-Ai/frontend
+cd frontend
 npm install
+cp .env.example .env
+cd ..
 ```
 
 ---
 
-### Step 6: Start Frontend Console
+## Quick Start
+
+### 1. Verify Installation with CLI
+
+With your backend virtual environment active:
 
 ```bash
+# Display CLI help and available commands
+vuln-ai --help
+
+# Check version
+vuln-ai version
+
+# Run system health diagnostics (Python, SQLite, Alembic, Feeds, Ollama)
+vuln-ai doctor
+```
+
+### 2. Run a Vulnerability Scan
+
+Scan any project directory containing manifests or lockfiles:
+
+```bash
+# Scan a project and view formatted terminal tables:
+vuln-ai scan ./my-project
+
+# Run headless without AI (pure deterministic mode):
+vuln-ai scan ./my-project --no-ai
+
+# Output machine-readable JSON for scripts:
+vuln-ai scan ./my-project --format json --no-ai
+
+# Fail CI with exit code 1 if High or Critical vulnerabilities are found:
+vuln-ai scan ./my-project --fail-on high --no-ai
+
+# Export directly to SARIF 2.1.0 for GitHub Security tab:
+vuln-ai scan ./my-project --format sarif --output results.sarif --no-ai
+```
+
+### 3. Start the Web Console & REST API
+
+```bash
+# Terminal 1: Start FastAPI Gateway (http://localhost:8000)
+cd backend
+source .venv/bin/activate
+uvicorn vuln_ai.api.main:app --reload --port 8000
+
+# Terminal 2: Start React Web Console (http://localhost:5173)
+cd frontend
 npm run dev
 ```
 
-Open your browser to: **`http://localhost:5173`**
+Open your browser to **`http://localhost:5173`** to access the Security Operations Console, or visit **`http://localhost:8000/docs`** for interactive Swagger API documentation.
 
 ---
 
-### Step 7: Run Quality Gates
+## Sources
 
-Verify that all automated tests and linters pass cleanly:
+Local Vulnerability AI synthesizes threat intelligence from three primary authorities into a local SQLite catalog:
+
+- **CISA KEV (Known Exploited Vulnerabilities)**: Official United States Cybersecurity and Infrastructure Security Agency catalog tracking vulnerabilities actively exploited in the wild, remediation deadlines, and known ransomware campaign association.
+- **OSV (Open Source Vulnerabilities)**: Google's distributed open-source vulnerability database, providing precise package ecosystems, commit-level version ranges, and cross-reference aliases.
+- **NVD (National Vulnerability Database)**: NIST CVE 2.0 feed providing Common Vulnerability Scoring System (CVSS v2/v3/v4) base metrics, vector strings, and Common Weakness Enumeration (CWE) taxonomies.
+
+To manage and synchronize sources:
 
 ```bash
-# Backend Quality Suite (in backend/ with .venv active):
+vuln-ai sources list
+vuln-ai sources sync
+```
+
+For technical details, see **[docs/sources.md](docs/sources.md)**.
+
+---
+
+## AI
+
+Local Vulnerability AI integrates **local Large Language Models** as an optional supplementary layer:
+
+- **Local Execution via Ollama**: Connects to an Ollama daemon running on `localhost:11434` (default model: `llama3.2`).
+- **Strict Privacy**: Your private source code, repository structure, and application code are **never** transmitted to the LLM. Only component metadata (package name, installed version, advisory title) is provided to generate contextual triage notes.
+- **Non-Authoritative**: AI output does **not** determine vulnerability presence, mathematically affected versions, or policy pass/fail decisions. All verdicts are governed by the deterministic Version Matcher and Risk Engine.
+- **Graceful Fallback**: If Ollama is offline or if `--no-ai` is passed, scans complete without interruption, logging an auditable `AI_UNAVAILABLE_FALLBACK` rule ID in the risk trace.
+
+For technical details, see **[docs/ai.md](docs/ai.md)**.
+
+---
+
+## Container Scanning
+
+Local Vulnerability AI 1.0.0 features a dedicated, pure static container and image analysis engine:
+
+- **Zero-Execution Guarantee**: Scans OCI and Docker image archives (`.tar`) and Dockerfiles completely statically. The scanner **never** calls `docker run`, `docker exec`, `docker build`, `podman`, or container runtimes.
+- **Rootless & Daemonless**: Operates without a Docker daemon, socket connection, or root privileges.
+- **Layer Stacking & Whiteouts**: Correctly handles overlay filesystems, standard whiteouts (`.wh.<filename>`), and opaque whiteout markers (`.wh..wh..opq`).
+- **Operating System Packages**: Static parsers for Alpine Linux (`APK`), Debian/Ubuntu (`DPKG`), and Red Hat/CentOS (`RPM`), attributing each package to its introducing layer.
+- **Embedded Application Discovery**: Recursively extracts and scans application lockfiles located inside container layers (`package-lock.json`, `Cargo.lock`, `requirements.txt`, etc.).
+- **Static Dockerfile AST Analysis**: Pure AST lexer analyzing multi-stage builds, target stages, and package installation commands.
+
+```bash
+# Scan a container archive:
+vuln-ai image scan ./my-image.tar --no-ai
+
+# Scan a Dockerfile statically:
+vuln-ai image scan ./Dockerfile --no-ai
+```
+
+> **Notice**: Container registry remote authentication, runtime monitoring, and Kubernetes cluster scanning are **intentionally not included** in 1.0.0. See [docs/container-scanning.md](docs/container-scanning.md) and [docs/dockerfile-scanning.md](docs/dockerfile-scanning.md).
+
+---
+
+## Policies
+
+The **Declarative Policy & Suppression Engine** enables automated governance for development and CI/CD workflows:
+
+- **Declarative YAML Rules (`.vuln-ai.yaml`)**: Define security gates based on severity, risk level, CVSS thresholds, KEV evidence, ecosystem, package scope (`RUNTIME` vs `DEV`), and direct vs. transitive status.
+- **Action Hierarchy**: Enforces deterministic actions: `BLOCK` > `REQUIRE_REVIEW` > `ACCEPT_RISK` > `ALLOW`.
+- **Suppression Management**: Allows auditable, temporary exemptions with required reasons, owners, and expiration dates (`expires_at`).
+- **Lifecycle Guarantees**:
+  - `ACTIVE`: Finding is noted but exempted from blocking CI (Exit code `0`).
+  - `EXPIRED`: Suppression is invalidated, warning is issued, and CI fails (Exit code `1`).
+  - Findings are **never** hidden or deleted from reports or audit logs.
+
+```bash
+# Validate a policy file syntax and schema:
+vuln-ai policy validate .vuln-ai.yaml
+
+# Inspect rules configured in a policy:
+vuln-ai policy check .vuln-ai.yaml
+
+# List active and expired suppressions:
+vuln-ai suppression list
+```
+
+For complete documentation, see **[docs/policy.md](docs/policy.md)** and **[docs/suppressions.md](docs/suppressions.md)**.
+
+---
+
+## Export Formats
+
+Local Vulnerability AI exports complete security findings and Software Bills of Materials (SBOM) in industry-standard formats:
+
+- **SARIF 2.1.0 (Static Analysis Results Interchange Format)**: Integrates directly with GitHub Code Scanning, GitLab Security Dashboard, and IDE viewers. Includes native suppression objects and policy metadata.
+- **CycloneDX 1.5 JSON**: Comprehensive application and container SBOM with full component dependency graphs, vulnerability entries, and policy status properties.
+- **SPDX 2.3 JSON**: Standard Software Package Data Exchange format preserving component versions and licensing assertions.
+
+```bash
+# Export to SARIF:
+vuln-ai scan ./project --format sarif --output results.sarif --no-ai
+
+# Export to CycloneDX SBOM:
+vuln-ai scan ./project --format cyclonedx --output sbom.cdx.json --no-ai
+
+# Export to SPDX SBOM:
+vuln-ai scan ./project --format spdx --output sbom.spdx.json --no-ai
+```
+
+For format mapping specifications, see **[docs/export-formats.md](docs/export-formats.md)**.
+
+---
+
+## Privacy
+
+Local Vulnerability AI is designed from the ground up for strict data isolation:
+
+- **Zero Source Code Transmission**: Your private source code is never transmitted across the network, nor is it sent to AI providers.
+- **Minimal Documented Egress**:
+  - `OSV`: Queries send only package names and ecosystems (e.g. `npm/lodash`) via HTTP POST to the public OSV API.
+  - `NVD` & `CISA KEV`: Standard HTTP GET requests fetch public vulnerability feed records.
+  - `Ollama`: Connects exclusively to local loopback (`http://localhost:11434`).
+- **Air-Gapped / Offline Support**: The platform can run completely offline once the local database is populated.
+- **Zero Telemetry**: No usage metrics, pings, analytics, or behavioral data are collected.
+
+For complete privacy specifications, see **[docs/privacy.md](docs/privacy.md)**.
+
+---
+
+## Security
+
+We take the security of this project and its dependency analysis pipeline seriously:
+
+- To report a security vulnerability, please review our disclosure guidelines in **[SECURITY.md](SECURITY.md)**.
+- Please do **not** open public GitHub issues for security vulnerabilities.
+- For architectural security controls (path traversal protection, safe YAML parsing, zero-execution sandbox), see **[docs/image-security.md](docs/image-security.md)**.
+
+---
+
+## Limitations
+
+Local Vulnerability AI 1.0.0 focuses on **deterministic, local-first static analysis**. The following capabilities are **intentionally out of scope**:
+
+- **No Remote Registry Authentication**: Scans local `.tar` archives only; does not store or manage Docker registry credentials.
+- **No Docker Daemon Dependency**: Does not communicate with Docker or Podman daemons.
+- **No Kubernetes / Helm / Cloud Scans**: Does not scan live Kubernetes clusters or cloud infrastructure posture.
+- **No Runtime Monitoring**: Does not monitor executing processes, network packets, or memory in running containers.
+- **No License Compliance Scanner**: Does not evaluate license legal compatibility.
+- **Single-Node Storage**: Uses local SQLite with write-ahead logging; multi-tenant cloud databases are not included.
+
+See **[docs/future-work.md](docs/future-work.md)** for post-1.0 exploration items.
+
+---
+
+## Contributing
+
+We welcome contributions from the open-source community!
+
+Please see **[CONTRIBUTING.md](CONTRIBUTING.md)** for our setup guide, code standards, architectural principles, and quality gates. Before opening a Pull Request, ensure that all automated quality checks pass:
+
+```bash
+# In backend/:
 pytest --cov=src --cov-report=term-missing --cov-fail-under=95
 ruff check src tests
 ruff format --check src tests
+alembic upgrade head
 
-# Frontend Quality Suite (in frontend/):
+# In frontend/:
+npm test
 npm run typecheck
 npm run lint
 npm run format:check
-npm test
 npm run build
 ```
 
 ---
 
-## 7. Run Your First Vulnerability Scan
+## License
 
-Here is a step-by-step walkthrough to scan a project:
-
-1. **Populate Intelligence Feeds**:
-   - In the frontend, navigate to **Sources** (`/sources`).
-   - Click **Sync Now** on **CISA KEV** or **OSV** to download threat records to your local database.
-2. **Register a Project**:
-   - Navigate to **Projects** (`/projects`) and click **Register Project**.
-   - Enter a name (e.g. `My Application`) and the absolute path to your codebase directory containing a `requirements.txt` or `pyproject.toml`.
-3. **Execute the Scan**:
-   - In the project detail view, click **Launch Scan**.
-   - The scanner parses installed components, queries the local catalog, evaluates version ranges, resolves conflicts, and queries local Ollama if available.
-4. **Review Findings & Audit Trail**:
-   - Open **Matches** (`/matches`) to inspect detected advisories.
-   - Click any match to open the **Match Detail** view (`/matches/:id`):
-     - **Evidence Panel**: Inspect exact range intervals evaluated across sources.
-     - **Conflict Panel**: Review any divergent verdicts between OSV, NVD, and CISA.
-     - **AI Narrative**: Read plain-English explanations and remediation guidance.
-     - **Audit Trace**: View the deterministic rules triggered by the Risk Engine.
+Distributed under the **MIT License**. See **[LICENSE](LICENSE)** for the full text.
 
 ---
 
-## 8. Command-Line Interface (CLI) & Headless Scanning
+## Status
 
-In addition to the Web UI, **Local Vulnerability AI** includes an official CLI (`vuln-ai`) for terminal workflows, automated scripts, and CI/CD pipelines (GitHub Actions, GitLab CI, Jenkins):
-
-```bash
-# Scan a project and view rich terminal tables:
-vuln-ai scan ./my-project
-
-# Machine-readable JSON output for automation:
-vuln-ai scan ./my-project --format json
-
-# Fail CI builds if High or Critical vulnerabilities are found:
-vuln-ai scan ./my-project --fail-on high
-
-# Export report to file and run without AI:
-vuln-ai scan ./my-project --no-ai --format json --output report.json
-
-# Check environment, database, and local AI health:
-vuln-ai doctor
-
-# Manage vulnerability intelligence feeds:
-vuln-ai sources list
-vuln-ai sources sync
-```
-
-For complete CLI documentation, options, and CI/CD integration guides, see **[docs/cli.md](docs/cli.md)**.
-
----
-
-## 9. Documentation Index
-
-Comprehensive technical documentation is maintained in `/docs`:
-
-- **[CLI & CI/CD Guide](docs/cli.md)**: Headless scanning, JSON output, exit codes, and pipeline integrations.
-- **[System Architecture](docs/architecture.md)**: Deep dive into domain models, repositories, and services.
-- **[Intelligence Sources](docs/sources.md)**: Ingestion mechanisms and limitations for OSV, NVD, and CISA KEV.
-- **[Version-Aware Matching](docs/version-matching.md)**: Mathematical interval evaluation for PEP 440, SemVer, and Maven.
-- **[Conflict Resolution](docs/conflict-resolution.md)**: Multi-source discrepancy detection and resolution policies.
-- **[AI & Decision Support](docs/ai.md)**: Ollama integration, SystemOne probabilities, and offline fallbacks.
-- **[REST API Specification](docs/api.md)**: Endpoint documentation, parameters, and payloads.
-- **[API & Frontend Contract](docs/api-contract.md)**: Enums, TypeScript mappings, and error formats.
-- **[Development Guide](docs/development.md)**: Copy-pasteable testing, formatting, and migration commands.
-- **[Troubleshooting Guide](docs/troubleshooting.md)**: Solutions for common connectivity, database, and sync errors.
-- **[Privacy Specification](docs/privacy.md)**: Detailed boundaries on data storage and network transmission.
-
----
-
-## 10. Repository Structure
-
-```text
-Local-Vulnerabilty-Ai/
-├── .github/
-│   └── workflows/
-│       └── ci.yml                 # Automated CI quality gates
-├── backend/
-│   ├── alembic/                  # Database migration versions
-│   ├── alembic.ini               # Alembic configuration
-│   ├── pyproject.toml            # Python dependencies, tool configs & CLI entrypoint
-│   ├── .env.example              # Backend environment template
-│   ├── src/vuln_ai/
-│   │   ├── ai/                   # Ollama, SystemOne & provider registry
-│   │   ├── api/                  # FastAPI routers, middleware & services
-│   │   ├── cli/                  # vuln-ai CLI commands, tables & JSON outputs
-│   │   ├── core/                 # Scanners, engine & domain models
-│   │   ├── db/                   # Async SQLAlchemy models & repositories
-│   │   ├── matching/             # Version matcher & conflict resolver
-│   │   ├── risk/                 # Deterministic Risk Engine
-│   │   └── sources/              # OSV, NVD, and CISA KEV connectors
-│   └── tests/
-│       ├── api/                  # REST API integration tests
-│       ├── cli/                  # CLI execution, exit code & JSON format tests
-│       ├── e2e/                  # End-to-end full system integration tests
-│       ├── integration/          # Engine and pipeline tests
-│       └── unit/                 # Unit tests across core modules
-├── frontend/
-│   ├── src/
-│   │   ├── app/                  # Providers and React Router setup
-│   │   ├── components/           # UI components, badges, intelligence cards
-│   │   ├── pages/                # Operational SOC pages
-│   │   ├── services/             # Typed API client and endpoint hooks
-│   │   └── types/                # TypeScript interface contracts
-│   ├── package.json              # Node dependencies and scripts
-│   ├── vite.config.ts            # Vite configuration
-│   └── .env.example              # Frontend environment template
-├── docs/                         # Technical architecture and guides
-├── CHANGELOG.md                  # Release version history
-├── CONTRIBUTING.md               # Contributor and developer guidelines
-├── SECURITY.md                   # Vulnerability disclosure policy
-├── LICENSE                       # MIT License
-└── README.md                     # Main project entrance
-```
-
----
-
-## 11. Contributing
-
-We welcome contributions from the community! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) guide for details on development setup, architectural rules, coding standards, and our pre-PR checklist.
-
----
-
-## 12. Security & Disclosure
-
-To report a security vulnerability, please review our [SECURITY.md](SECURITY.md) policy. Please do **not** file public GitHub issues for security vulnerabilities.
-
----
-
-## 13. License
-
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
+**Version 1.0.0 — Release Ready**  
+Production-ready open-source release with comprehensive regression coverage, verified zero-execution container security, deterministic policy enforcement, and multi-format exports.

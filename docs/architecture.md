@@ -15,27 +15,57 @@
 
 ## 2. Diagrama de Arquitectura de Alto Nivel
 
+```text
+CLI / API / Frontend
+         │
+         ↓
+    Scan Engine
+         ↓
+ Dependency Graph  ←── Project scanners + Container/ImageSource
+         ↓
+ Vulnerability Catalog (OSV / NVD / CISA KEV)
+         ↓
+ Version-aware Matcher
+         ↓
+ Conflict Resolver
+         ↓
+   ┌─────┴─────┐
+   ↓           ↓
+AI (opt.)   SystemOne (opt.)
+   └─────┬─────┘
+         ↓
+    Risk Engine
+         ↓
+   Policy Engine
+         ↓
+ Suppression Engine
+         ↓
+ Canonical Scan Result
+         ↓
+   ┌─────┼─────┐
+   ↓     ↓     ↓
+ SARIF CycloneDX SPDX
+```
+
 ```mermaid
 graph TD
-    UI[Frontend: React + Vite + Tailwind + shadcn/ui] -->|HTTP / REST JSON| API[FastAPI REST API: /api/v1]
-    
-    subgraph Backend [Python Backend: backend/]
-        API --> SVC[Application Services]
-        SVC --> ENGINE[ScanEngine]
-        SVC --> REPO[Async Repositories]
-        
-        ENGINE --> SCANNERS[Dependency Scanners: Pip, Poetry]
-        ENGINE --> SOURCES[Multi-Source Intelligence: CISA KEV, OSV, NVD]
-        ENGINE --> MATCHER[Version-aware Matcher & Range Evaluator]
-        
-        ENGINE --> AI_LAYER[AI Layer: Ollama & Decision Models]
-        ENGINE --> RISK_ENGINE[Deterministic Risk Engine]
-        
-        AI_LAYER --> LLM[Local Ollama / SystemOne]
-        
-        REPO --> ORM[SQLAlchemy 2.0 Async]
-        ORM --> DB[(SQLite WAL Database)]
-    end
+    UI[Frontend] -->|HTTP JSON| API[FastAPI /api/v1]
+    CLI[CLI vuln-ai] --> ENGINE[ScanEngine]
+    API --> ENGINE
+    ENGINE --> GRAPH[Dependency Graph]
+    GRAPH --> CAT[Vulnerability Catalog]
+    CAT --> MATCH[Version-aware Matcher]
+    MATCH --> CONF[Conflict Resolver]
+    CONF --> AI[Optional AI / SystemOne]
+    CONF --> RISK[Risk Engine]
+    AI --> RISK
+    RISK --> POL[Policy Engine]
+    POL --> SUP[Suppression Engine]
+    SUP --> OUT[Canonical Result]
+    OUT --> SARIF[SARIF 2.1.0]
+    OUT --> CDX[CycloneDX 1.5]
+    OUT --> SPDX[SPDX 2.3]
+    CONT[Container ImageSource] --> GRAPH
 ```
 
 ---

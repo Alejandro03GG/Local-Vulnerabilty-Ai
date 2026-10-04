@@ -24,7 +24,7 @@ Conforms to **SARIF 2.1.0** (`https://json.schemastore.org/sarif-2.1.0.json`).
 
 ### Tool Metadata
 - **Driver Name:** `Local Vulnerability AI`
-- **Driver Version:** Derived dynamically from application version (`0.1.0`).
+- **Driver Version:** Derived dynamically from application version (`vuln_ai.__version__`).
 - **Information URI:** Official repository URL (`https://github.com/Alejandro03GG/Local-Vulnerabilty-Ai`).
 
 ### Rules & Results Architecture

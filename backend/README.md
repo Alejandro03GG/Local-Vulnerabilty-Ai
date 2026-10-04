@@ -49,7 +49,7 @@ Copiar la plantilla de configuración:
 cp .env.example .env
 ```
 
-Las variables de entorno siguen el prefijo `VULN_AI_` (por ejemplo, `VULN_AI_DATABASE__URL`, `VULN_AI_AI__OLLAMA_BASE_URL`).
+Las variables de entorno siguen el prefijo `VULN_AI_` (por ejemplo, `VULN_AI_DATABASE__URL`, `VULN_AI_AI__OLLAMA__BASE_URL`).
 
 ## Base de Datos y Migraciones con Alembic
 

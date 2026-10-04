@@ -333,7 +333,8 @@ class NpmLockScanner:
         try:
             content = pkg_path.read_text(encoding="utf-8")
             data = json.loads(content)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Failed to parse %s for unpinned components: %s", pkg_path, exc)
             return
 
         all_specs: list[tuple[dict[str, str], DependencyScope]] = [

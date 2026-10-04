@@ -116,11 +116,10 @@ vuln-ai image scan /path/to/app-container.tar --no-ai
 
 ### Inspecting Image Metadata
 ```bash
-# List all previously scanned container images
-vuln-ai image list
+# Dockerfile static analysis (never builds)
+vuln-ai image scan ./Dockerfile
 
-# Show detailed breakdown of layers, OS packages, and vulnerabilities
-vuln-ai image info <IMAGE_ID_OR_DIGEST>
+# Inventory/detail of scanned images: API GET /api/v1/images or frontend Container Images page
 ```
 
 ---

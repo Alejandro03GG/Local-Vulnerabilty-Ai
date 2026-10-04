@@ -5,6 +5,10 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from vuln_ai import __version__
+
+_DEFAULT_USER_AGENT = f"local-vulnerability-ai/{__version__}"
+
 
 class DatabaseSettings(BaseSettings):
     """Database configuration."""
@@ -29,7 +33,7 @@ class KEVSourceSettings(BaseSettings):
     )
     timeout_seconds: int = Field(default=30, description="HTTP request timeout")
     user_agent: str = Field(
-        default="local-vulnerability-ai/0.1.0",
+        default=_DEFAULT_USER_AGENT,
         description="User-Agent header for HTTP requests",
     )
     max_retries: int = Field(default=3, description="Maximum retry attempts")
@@ -47,7 +51,7 @@ class OSVSourceSettings(BaseSettings):
         description="HTTP request timeout for OSV API",
     )
     user_agent: str = Field(
-        default="local-vulnerability-ai/0.1.0",
+        default=_DEFAULT_USER_AGENT,
         description="User-Agent header for OSV API requests",
     )
     max_retries: int = Field(default=3, description="Maximum retry attempts")
@@ -69,7 +73,7 @@ class NVDSourceSettings(BaseSettings):
         description="HTTP request timeout for NVD API",
     )
     user_agent: str = Field(
-        default="local-vulnerability-ai/0.1.0",
+        default=_DEFAULT_USER_AGENT,
         description="User-Agent header for NVD API requests",
     )
     results_per_page: int = Field(
@@ -133,7 +137,7 @@ class APISettings(BaseSettings):
         description="Allowed CORS origins",
     )
     title: str = Field(default="Local Vulnerability AI API", description="API title")
-    version: str = Field(default="0.1.0", description="API version")
+    version: str = Field(default=__version__, description="API version")
 
 
 class Settings(BaseSettings):

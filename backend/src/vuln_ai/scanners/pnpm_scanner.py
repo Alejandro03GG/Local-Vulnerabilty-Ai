@@ -208,7 +208,8 @@ class PnpmLockScanner:
         try:
             content = pkg_path.read_text(encoding="utf-8")
             data = json.loads(content)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Failed to parse %s for dependency names: %s", pkg_path, exc)
             return direct, dev
 
         for name in data.get("dependencies", {}):

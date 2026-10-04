@@ -163,6 +163,22 @@ pytest tests/unit/test_alembic_migrations.py
 
 ## 6. Git Workflow & Pull Requests
 
+```text
+Fork / branch
+     ↓
+  Install
+     ↓
+ Run tests
+     ↓
+ Run lint
+     ↓
+Make changes
+     ↓
+Run tests again
+     ↓
+Open Pull Request
+```
+
 ### Branch Naming Convention
 - `feat/feature-name` for new capabilities or tools.
 - `fix/bug-description` for bug fixes.
@@ -198,3 +214,7 @@ npm run build
 ```
 
 All quality gates must pass cleanly (`0` errors, `0` failed tests, `>= 95%` backend coverage).
+
+## Release Process
+
+Before tagging a release, complete [docs/release-checklist.md](docs/release-checklist.md).

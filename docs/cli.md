@@ -61,7 +61,7 @@ Display the canonical application version:
 
 ```bash
 vuln-ai version
-# Output: Local Vulnerability AI 0.1.0
+# Output: Local Vulnerability AI 1.0.0
 ```
 
 or via root flags:
@@ -536,26 +536,14 @@ vuln-ai image scan /path/to/image.tar --no-ai
 vuln-ai image scan /path/to/image.tar --format sarif --output container-findings.sarif
 ```
 
-### `vuln-ai image list`
-List all scanned container images persisted in the local security operations database.
+### Dockerfile static analysis via `image scan`
+
+Pass a Dockerfile path to the same command (static AST only; never builds):
 
 ```bash
-vuln-ai image list
+vuln-ai image scan /path/to/Dockerfile
+vuln-ai image scan /path/to/Dockerfile --format json
 ```
 
-### `vuln-ai image info`
-Display detailed inspection breakdown for a specific image, including layers, digests, sizes, OS packages, and correlated vulnerabilities.
-
-```bash
-vuln-ai image info <IMAGE_ID_OR_DIGEST>
-```
-
-### `vuln-ai image dockerfile`
-Statically parse and analyze a Dockerfile AST without building it.
-
-```bash
-vuln-ai image dockerfile /path/to/Dockerfile
-vuln-ai image dockerfile /path/to/Dockerfile --format json
-```
-
+> Inventory/detail of previously scanned images is available via the API (`GET /api/v1/images`) and the frontend **Container Images** page. Dedicated `image list` / `image info` CLI subcommands are reserved as future work.
 

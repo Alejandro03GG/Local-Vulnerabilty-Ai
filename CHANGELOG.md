@@ -9,7 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+## [1.0.0] - 2026-10-03
+
+### Security Engine
+- Deterministic vulnerability matching, conflict resolution, and risk assessment pipeline.
+- Canonical applicability vocabulary (`LIKELY_AFFECTED`, `LIKELY_NOT_AFFECTED`, `REQUIRES_REVIEW`, `UNKNOWN`); status `VULNERABLE` prohibited.
+
+### Dependency Scanning
+- Python, Poetry, npm, pnpm, and Cargo lockfile/manifest scanners.
+- Dependency Graph with direct/transitive provenance and multi-version support.
+
+### Container Scanning
+- Static Docker/OCI archive and Dockerfile analysis via `ImageSource` / `LocalOCIArchiveSource`.
+- OS package detection (`dpkg`, `apk`, `rpm`) with version strategies for `deb` / `apk` / `rpm`.
+- Zero-execution guarantee (no container runtime invocation during analysis).
+- CLI: `vuln-ai image scan <archive.tar|Dockerfile>`.
+
+### AI
+- Optional local Ollama / SystemOne assistance; non-authoritative; graceful offline degradation; `--no-ai` support.
+
+### Risk / Policy / Suppressions
+- Deterministic Risk Engine, Policy Engine, and auditable Suppression lifecycle with `FixedClock` support.
+- Optional image-digest scoping for container findings.
+
+### CLI / API / Frontend
+- Headless CLI (`scan`, `image`, `sources`, `policy`, `suppression`, `doctor`, `version`).
+- FastAPI surface for projects, scans, matches, sources, policies, suppressions, images, and exports.
+- React SOC console including Container Images views.
+
+### Exports
+- SARIF 2.1.0, CycloneDX 1.5, and SPDX 2.3 with container provenance properties.
+
+### Security & Privacy
+- Local-first model; documented egress (OSV/NVD/CISA KEV + optional localhost Ollama).
+- Archive/path/symlink hardening; YAML safe loading; no secret persistence for registry credentials.
+
+### Documentation
+- Installation, CLI, API, architecture, privacy, container/image security, policy, exports, and release checklist.
+
+### Known Limitations
+- No registry authentication, Docker daemon dependency, Kubernetes/Helm, or runtime monitoring in 1.0.
+
+### Detailed Functional Breakdown
 
 #### Container & Image Scanning Engine (Etapa 17)
 - **Zero-Execution Architecture & OCI/Docker Parser**:
@@ -37,10 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Alembic migration `i2e5f7a3b8c9` introducing `container_images` and `container_layers` tables, and adding `layer_index`, `layer_digest`, `package_type` to `detected_components`.
   - `ContainerImageRepository` with cascade deletes and eager layer relationship loading.
 - **CLI Subcommands**:
-  - `vuln-ai image scan <ARCHIVE.tar>`: scan container archives with `--reference`, `--policy`, `--format`, `--output`, `--no-ai`.
-  - `vuln-ai image list`: list scanned container images.
-  - `vuln-ai image info <ID_OR_DIGEST>`: display layer, OS package, and vulnerability breakdown.
-  - `vuln-ai image dockerfile <DOCKERFILE>`: static AST inspection.
+  - `vuln-ai image scan <ARCHIVE.tar|Dockerfile>`: static scan of container archives or Dockerfiles with `--reference`, `--policy`, `--format`, `--output`, `--no-ai`, `--fail-on`.
+  - Image inventory/detail via API (`GET /api/v1/images`) and frontend Container Images page.
 - **REST API Endpoints**:
   - `/api/v1/images`: list scanned images (paginated).
   - `/api/v1/images/scan`: static container archive scanning.

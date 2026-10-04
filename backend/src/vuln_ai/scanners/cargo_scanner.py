@@ -220,7 +220,8 @@ class CargoLockScanner:
         try:
             content = manifest_path.read_text(encoding="utf-8")
             data = tomllib.loads(content)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Failed to parse %s for unpinned components: %s", manifest_path, exc)
             return
 
         for section_name, scope in [

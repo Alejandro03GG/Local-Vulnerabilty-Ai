@@ -10,8 +10,8 @@ Only the latest release branch receives active security updates and vulnerabilit
 
 | Version | Supported          |
 | :---    | :---               |
-| 0.1.x   | :white_check_mark: |
-| < 0.1.0 | :x:                |
+| 1.0.x   | :white_check_mark: |
+| < 1.0.0 | :x:                |
 
 ---
 
@@ -75,3 +75,28 @@ Local Vulnerability AI performs **static** container/image artifact analysis and
 - Registry credentials and tokens must never be persisted in the local database.
 
 See [docs/security.md](docs/security.md) and [docs/image-security.md](docs/image-security.md) for hardening details.
+
+---
+
+## Threat Model (Summary)
+
+Local Vulnerability AI is a **local analysis tool**. Primary threats in scope:
+
+| Threat | Mitigation |
+| :--- | :--- |
+| Malicious project manifests / lockfiles | Strict parsers, size limits, no code execution |
+| Malicious container archives / Dockerfiles | Static inspection only; archive bomb, path traversal, and symlink controls; never `docker run` / `docker build` |
+| Malicious policy YAML | `yaml.safe_load`, Pydantic `extra="forbid"`, size limits |
+| Accidental secret persistence | No registry/Docker credentials stored in SQLite |
+| AI data leakage | Optional local Ollama only; metadata-only prompts; `--no-ai` disables AI |
+| Incorrect security decisions from AI | Deterministic Matcher / Conflict / Risk / Policy remain authoritative |
+
+Out of scope for 1.0: registry authentication, Kubernetes, runtime container monitoring, malware execution, cloud posture management.
+
+---
+
+## Third-Party Dependencies
+
+Dependency advisories are reviewed at release time. Known deferred items for 1.0.0:
+
+- `react-router` / `react-router-dom` 6.30.x: moderate advisories with fixes only available via breaking React Router 7 upgrade. This application is a local SPA without SSR hydration; tracked as post-1.0 work in [docs/future-work.md](docs/future-work.md).

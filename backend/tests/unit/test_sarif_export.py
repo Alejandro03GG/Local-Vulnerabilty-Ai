@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+from vuln_ai import __version__
 from vuln_ai.core.graph import DependencyGraph, DependencyType
 from vuln_ai.core.models import (
     Applicability,
@@ -75,7 +76,7 @@ def test_sarif_minimum_valid_document_and_tool_metadata():
 
     driver = doc["runs"][0]["tool"]["driver"]
     assert driver["name"] == "Local Vulnerability AI"
-    assert driver["version"] == "0.1.0"
+    assert driver["version"] == __version__
     assert "https://github.com" in driver["informationUri"]
     assert driver["rules"] == []
     assert doc["runs"][0]["results"] == []
