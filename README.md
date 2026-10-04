@@ -8,7 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Coverage](https://img.shields.io/badge/Coverage-95%25+-success)](backend/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status: Release Ready](https://img.shields.io/badge/Status-v1.0.0%20Release%20Ready-blue.svg)](CHANGELOG.md)
+[![Status: Release Ready](https://img.shields.io/badge/Status-v1.0.1%20Release%20Ready-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -362,5 +362,5 @@ Distributed under the **MIT License**. See **[LICENSE](LICENSE)** for the full t
 
 ## Status
 
-**Version 1.0.0 — Release Ready**  
-Production-ready open-source release with comprehensive regression coverage, verified zero-execution container security, deterministic policy enforcement, and multi-format exports.
+**Version 1.0.1 — Release Ready**  
+Production-ready open-source release with comprehensive regression coverage, verified zero-execution container security, deterministic policy enforcement, and multi-format exports. Patch 1.0.1 stabilizes GitHub Actions backend quality gates without changing product behavior.

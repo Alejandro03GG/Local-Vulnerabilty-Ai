@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-04
+
+### Fixed
+- Backend CI Quality Gates on GitHub Actions: enable coverage `sysmon` so the 95% gate matches local measurement.
+- Pin SQLAlchemy to the 2.0.x line for async/SQLite stability in CI.
+- Relax large-export timing assertion under coverage instrumentation on CI runners.
+- CLI help regressions under `CI=true` force-color terminals (Rich ANSI splits inside `--format` / related flags).
+- Isolate container image 404 API tests on the in-memory `api_client` fixture.
+
 ## [1.0.0] - 2026-10-03
 
 ### Security Engine
