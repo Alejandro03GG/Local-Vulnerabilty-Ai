@@ -38,7 +38,7 @@ def _make_risk(level: RiskLevel = RiskLevel.HIGH, review: bool = False) -> RiskA
     )
 
 
-def test_scenario_a_project_without_vulnerabilities():
+def test_scenario_a_project_without_vulnerabilities() -> None:
     """Caso A: Project with dependencies but 0 vulnerabilities."""
     graph = DependencyGraph()
     node = DependencyNode.create(
@@ -74,7 +74,7 @@ def test_scenario_a_project_without_vulnerabilities():
     assert len(spdx["packages"]) == 2  # Root + secure-lib
 
 
-def test_scenario_b_vulnerable_direct_dependency():
+def test_scenario_b_vulnerable_direct_dependency() -> None:
     """Caso B: Vulnerable direct dependency."""
     comp = DetectedComponent(
         name="flask",
@@ -118,7 +118,7 @@ def test_scenario_b_vulnerable_direct_dependency():
     assert any(p["name"] == "flask" for p in spdx["packages"])
 
 
-def test_scenario_c_vulnerable_transitive_dependency():
+def test_scenario_c_vulnerable_transitive_dependency() -> None:
     """Caso C: Vulnerable transitive dependency with dependency path."""
     graph = DependencyGraph()
     parent = DependencyNode.create(
@@ -187,7 +187,7 @@ def test_scenario_c_vulnerable_transitive_dependency():
     assert path_prop["value"] == "web-framework -> lodash"
 
 
-def test_scenario_d_multiple_versions_of_same_package():
+def test_scenario_d_multiple_versions_of_same_package() -> None:
     """Caso D: Multiple versions of the same package in project."""
     graph = DependencyGraph()
     n1 = DependencyNode.create(
@@ -242,7 +242,7 @@ def test_scenario_d_multiple_versions_of_same_package():
     assert semver_pkgs[0]["SPDXID"] != semver_pkgs[1]["SPDXID"]
 
 
-def test_scenario_e_multi_source_conflict():
+def test_scenario_e_multi_source_conflict() -> None:
     """Caso E: Multi-source conflict preserving REQUIRES_REVIEW and conflict data."""
     comp = DetectedComponent(
         name="urllib3",
@@ -293,7 +293,7 @@ def test_scenario_e_multi_source_conflict():
     assert cdx["vulnerabilities"][0]["analysis"]["state"] == "in_triage"
 
 
-def test_scenario_f_cisa_only():
+def test_scenario_f_cisa_only() -> None:
     """Caso F: CISA-only vulnerability."""
     comp = DetectedComponent(
         name="log4j-core",
@@ -328,7 +328,7 @@ def test_scenario_f_cisa_only():
     assert sarif["runs"][0]["tool"]["driver"]["rules"][0]["properties"]["hasKev"] is True
 
 
-def test_scenario_g_and_h_ai_and_systemone_unavailable():
+def test_scenario_g_and_h_ai_and_systemone_unavailable() -> None:
     """Casos G & H: Exports succeed cleanly when AI / SystemOne are unavailable."""
     comp = DetectedComponent(
         name="requests",
@@ -369,7 +369,7 @@ def test_scenario_g_and_h_ai_and_systemone_unavailable():
     validate_spdx_dict(spdx)
 
 
-def test_scenario_i_empty_project():
+def test_scenario_i_empty_project() -> None:
     """Caso I: Empty project with no files or components."""
     summary = ScanResultSummary(
         project_name="empty-proj",
@@ -393,7 +393,7 @@ def test_scenario_i_empty_project():
     assert len(spdx["packages"]) == 1  # Root only
 
 
-def test_scenario_j_large_dependency_graph():
+def test_scenario_j_large_dependency_graph() -> None:
     """Caso J: Stress test with 1000+ nodes, 1000+ edges, 100+ vulnerabilities (§43, §58)."""
     graph = DependencyGraph()
     total_nodes = 1050

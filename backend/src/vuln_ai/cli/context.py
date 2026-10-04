@@ -78,13 +78,18 @@ async def get_cli_session(settings: Settings | None = None) -> AsyncGenerator[As
     """Provide an async database session for CLI commands."""
     s = settings or get_settings()
     factory = get_session_factory(s)
-    async with factory() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
+    try:
+        async with factory() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+    finally:
+        from vuln_ai.db.database import close_db
+
+        await close_db()
 
 
 def run_async_cli(coro: Any) -> Any:

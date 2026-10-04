@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -36,7 +37,7 @@ def kev_source() -> CISAKEVSource:
 
 
 @pytest.fixture
-def sample_kev_entry_basic() -> dict:
+def sample_kev_entry_basic() -> dict[str, Any]:
     return {
         "cveID": "CVE-2024-1000",
         "vendorProject": "Django",
@@ -61,8 +62,8 @@ class TestCISAKEVNormalization:
     """Tests for CISA KEV entry parsing and normalization into canonical domain models."""
 
     def test_normalize_valid_payload(
-        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict
-    ):
+        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict[str, Any]
+    ) -> None:
         """Standard valid KEV payload normalizes all fields accurately."""
         record = kev_source.normalize(sample_kev_entry_basic)
 
@@ -81,8 +82,8 @@ class TestCISAKEVNormalization:
         assert record.cwes == ["CWE-89"]
 
     def test_normalize_identifiers_structure(
-        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict
-    ):
+        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict[str, Any]
+    ) -> None:
         """Ensure canonical_id and identifiers are properly structured without synthetic IDs."""
         record = kev_source.normalize(sample_kev_entry_basic)
 
@@ -98,8 +99,8 @@ class TestCISAKEVNormalization:
             assert not i.identifier.startswith("KEV-")
 
     def test_normalize_source_records_evidence(
-        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict
-    ):
+        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict[str, Any]
+    ) -> None:
         """Ensure source record has KEV exploitation evidence and preserves raw payload."""
         record = kev_source.normalize(sample_kev_entry_basic)
 
@@ -113,13 +114,13 @@ class TestCISAKEVNormalization:
         assert sr.synced_at is not None
 
     def test_normalize_no_synthetic_affected_ranges(
-        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict
-    ):
+        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict[str, Any]
+    ) -> None:
         """CRITICAL: CISA KEV does NOT provide package ranges; never invent them."""
         record = kev_source.normalize(sample_kev_entry_basic)
         assert record.affected_ranges == []
 
-    def test_normalize_optional_and_empty_fields(self, kev_source: CISAKEVSource):
+    def test_normalize_optional_and_empty_fields(self, kev_source: CISAKEVSource) -> None:
         """Optional fields like notes, description, action handle empty values safely."""
         minimal = {
             "cveID": "CVE-2024-3333",
@@ -137,7 +138,7 @@ class TestCISAKEVNormalization:
         assert record.cwes == []
         assert record.known_ransomware_use == "Unknown"
 
-    def test_normalize_ransomware_variations(self, kev_source: CISAKEVSource):
+    def test_normalize_ransomware_variations(self, kev_source: CISAKEVSource) -> None:
         """knownRansomwareCampaignUse handles strings, booleans, and casing properly."""
         # Boolean True -> "Known"
         r1 = kev_source.normalize(
@@ -194,7 +195,7 @@ class TestCISAKEVNormalization:
         )
         assert r5.known_ransomware_use == "LockBit 3.0"
 
-    def test_normalize_date_formats(self, kev_source: CISAKEVSource):
+    def test_normalize_date_formats(self, kev_source: CISAKEVSource) -> None:
         """Date parsing handles ISO-8601 timestamps and YYYY-MM-DD formats."""
         entry = {
             "cveID": "CVE-2024-0010",
@@ -207,7 +208,7 @@ class TestCISAKEVNormalization:
         assert record.date_added == datetime(2024, 5, 20, 14, 30, tzinfo=UTC)
         assert record.due_date == datetime(2024, 6, 10, tzinfo=UTC)
 
-    def test_normalize_cwes_variations(self, kev_source: CISAKEVSource):
+    def test_normalize_cwes_variations(self, kev_source: CISAKEVSource) -> None:
         """CWE parsing handles lists, comma-delimited strings, and whitespace."""
         # Comma delimited string
         r1 = kev_source.normalize(
@@ -240,24 +241,24 @@ class TestCISAKEVNormalization:
 class TestCISAKEVErrorHandling:
     """Tests for malformed inputs, network errors, timeouts, and HTTP errors."""
 
-    def test_normalize_non_dict_error(self, kev_source: CISAKEVSource):
+    def test_normalize_non_dict_error(self, kev_source: CISAKEVSource) -> None:
         with pytest.raises(SourceParseError, match="must be a dictionary"):
             kev_source.normalize("not a dict")  # type: ignore
 
-    def test_normalize_missing_cve_error(self, kev_source: CISAKEVSource):
+    def test_normalize_missing_cve_error(self, kev_source: CISAKEVSource) -> None:
         with pytest.raises(SourceParseError, match="Missing cveID"):
             kev_source.normalize({"vendorProject": "V", "product": "P"})
 
-    def test_normalize_invalid_cve_format_error(self, kev_source: CISAKEVSource):
+    def test_normalize_invalid_cve_format_error(self, kev_source: CISAKEVSource) -> None:
         with pytest.raises(SourceParseError, match="Invalid cveID"):
             kev_source.normalize({"cveID": "GHSA-xxxx-yyyy", "vendorProject": "V", "product": "P"})
 
-    def test_normalize_missing_vendor_product_error(self, kev_source: CISAKEVSource):
+    def test_normalize_missing_vendor_product_error(self, kev_source: CISAKEVSource) -> None:
         with pytest.raises(SourceParseError, match="Missing vendorProject or product"):
             kev_source.normalize({"cveID": "CVE-2024-1234", "vendorProject": ""})
 
     @pytest.mark.asyncio
-    async def test_download_http_4xx(self, kev_source: CISAKEVSource):
+    async def test_download_http_4xx(self, kev_source: CISAKEVSource) -> None:
         request = httpx.Request("GET", "https://example.com/kev.json")
         response = httpx.Response(404, request=request)
         with (
@@ -270,7 +271,7 @@ class TestCISAKEVErrorHandling:
             await kev_source._download("https://example.com/kev.json")
 
     @pytest.mark.asyncio
-    async def test_download_http_5xx(self, kev_source: CISAKEVSource):
+    async def test_download_http_5xx(self, kev_source: CISAKEVSource) -> None:
         request = httpx.Request("GET", "https://example.com/kev.json")
         response = httpx.Response(503, request=request)
         with (
@@ -285,7 +286,7 @@ class TestCISAKEVErrorHandling:
             await kev_source._download("https://example.com/kev.json")
 
     @pytest.mark.asyncio
-    async def test_download_timeout(self, kev_source: CISAKEVSource):
+    async def test_download_timeout(self, kev_source: CISAKEVSource) -> None:
         with (
             patch("httpx.AsyncClient.get", side_effect=httpx.TimeoutException("Read timeout")),
             pytest.raises(SourceSyncError, match="Timeout downloading"),
@@ -293,7 +294,7 @@ class TestCISAKEVErrorHandling:
             await kev_source._download("https://example.com/kev.json")
 
     @pytest.mark.asyncio
-    async def test_download_invalid_json(self, kev_source: CISAKEVSource):
+    async def test_download_invalid_json(self, kev_source: CISAKEVSource) -> None:
         request = httpx.Request("GET", "https://example.com/kev.json")
         response = httpx.Response(200, request=request, text="<html>Invalid JSON</html>")
         with (
@@ -302,11 +303,11 @@ class TestCISAKEVErrorHandling:
         ):
             await kev_source._download("https://example.com/kev.json")
 
-    def test_parse_missing_vulnerabilities_key(self, kev_source: CISAKEVSource):
+    def test_parse_missing_vulnerabilities_key(self, kev_source: CISAKEVSource) -> None:
         with pytest.raises(SourceParseError, match="missing 'vulnerabilities' key"):
             kev_source._parse({"catalogVersion": "1.0"})
 
-    def test_parse_vulnerabilities_not_a_list(self, kev_source: CISAKEVSource):
+    def test_parse_vulnerabilities_not_a_list(self, kev_source: CISAKEVSource) -> None:
         with pytest.raises(SourceParseError, match="is not an array"):
             kev_source._parse({"vulnerabilities": "not a list"})
 
@@ -321,8 +322,8 @@ class TestCISAKEVSyncAndSearch:
 
     @pytest.mark.asyncio
     async def test_sync_success_primary(
-        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict
-    ):
+        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict[str, Any]
+    ) -> None:
         feed_data = {"vulnerabilities": [sample_kev_entry_basic]}
         with patch.object(kev_source, "_download", new_callable=AsyncMock) as mock_dl:
             mock_dl.return_value = feed_data
@@ -335,8 +336,8 @@ class TestCISAKEVSyncAndSearch:
 
     @pytest.mark.asyncio
     async def test_sync_fallback_to_mirror(
-        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict
-    ):
+        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict[str, Any]
+    ) -> None:
         feed_data = {"vulnerabilities": [sample_kev_entry_basic]}
         with patch.object(kev_source, "_download", new_callable=AsyncMock) as mock_dl:
             # Primary fails, mirror succeeds
@@ -351,7 +352,7 @@ class TestCISAKEVSyncAndSearch:
             assert mock_dl.call_count == 2
 
     @pytest.mark.asyncio
-    async def test_sync_all_exhausted(self, kev_source: CISAKEVSource):
+    async def test_sync_all_exhausted(self, kev_source: CISAKEVSource) -> None:
         with patch.object(kev_source, "_download", new_callable=AsyncMock) as mock_dl:
             mock_dl.side_effect = [
                 SourceSyncError("Primary 503"),
@@ -363,7 +364,9 @@ class TestCISAKEVSyncAndSearch:
             assert "Mirror 404" in result.error
             assert result.records_synced == 0
 
-    def test_get_cve_lookup(self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict):
+    def test_get_cve_lookup(
+        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict[str, Any]
+    ) -> None:
         rec = kev_source.normalize(sample_kev_entry_basic)
         kev_source._records = [rec]
 
@@ -376,8 +379,8 @@ class TestCISAKEVSyncAndSearch:
 
     @pytest.mark.asyncio
     async def test_search_by_component(
-        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict
-    ):
+        self, kev_source: CISAKEVSource, sample_kev_entry_basic: dict[str, Any]
+    ) -> None:
         rec = kev_source.normalize(sample_kev_entry_basic)
         kev_source._records = [rec]
 
@@ -402,8 +405,8 @@ class TestCISAKEVMultiSourceDeduplication:
         self,
         db_session: AsyncSession,
         kev_source: CISAKEVSource,
-        sample_kev_entry_basic: dict,
-    ):
+        sample_kev_entry_basic: dict[str, Any],
+    ) -> None:
         """Case: CISA KEV persists into empty database."""
         source_repo = SourceRepository(db_session)
         vuln_repo = VulnerabilityRepository(db_session)
@@ -447,8 +450,8 @@ class TestCISAKEVMultiSourceDeduplication:
         self,
         db_session: AsyncSession,
         kev_source: CISAKEVSource,
-        sample_kev_entry_basic: dict,
-    ):
+        sample_kev_entry_basic: dict[str, Any],
+    ) -> None:
         """Case A: CISA syncs the same CVE multiple times without duplicates."""
         source_repo = SourceRepository(db_session)
         vuln_repo = VulnerabilityRepository(db_session)
@@ -465,6 +468,7 @@ class TestCISAKEVMultiSourceDeduplication:
         await vuln_repo.upsert_vulnerabilities(cisa_src.id, [record])
         await db_session.commit()
         v1 = await vuln_repo.get_by_canonical_id("CVE-2024-1000")
+        assert v1 is not None
         uuid_1 = v1.id
 
         # Sync 2
@@ -493,8 +497,8 @@ class TestCISAKEVMultiSourceDeduplication:
         self,
         db_session: AsyncSession,
         kev_source: CISAKEVSource,
-        sample_kev_entry_basic: dict,
-    ):
+        sample_kev_entry_basic: dict[str, Any],
+    ) -> None:
         """Case B: NVD arrives first, then CISA arrives for same CVE.
 
         Result:
@@ -532,6 +536,7 @@ class TestCISAKEVMultiSourceDeduplication:
         await db_session.commit()
 
         v1 = await vuln_repo.get_by_canonical_id("CVE-2024-1000")
+        assert v1 is not None
         shared_uuid = v1.id
         assert v1.cvss_score == 8.8
 
@@ -568,8 +573,8 @@ class TestCISAKEVMultiSourceDeduplication:
         self,
         db_session: AsyncSession,
         kev_source: CISAKEVSource,
-        sample_kev_entry_basic: dict,
-    ):
+        sample_kev_entry_basic: dict[str, Any],
+    ) -> None:
         """Case: OSV arrives first with affected ranges, then CISA arrives.
 
         Result:
@@ -619,6 +624,7 @@ class TestCISAKEVMultiSourceDeduplication:
         await db_session.commit()
 
         v1 = await vuln_repo.get_by_canonical_id("CVE-2024-1000")
+        assert v1 is not None
         shared_uuid = v1.id
 
         # 2. CISA arrives second
@@ -657,8 +663,8 @@ class TestCISAKEVMultiSourceDeduplication:
         self,
         db_session: AsyncSession,
         kev_source: CISAKEVSource,
-        sample_kev_entry_basic: dict,
-    ):
+        sample_kev_entry_basic: dict[str, Any],
+    ) -> None:
         """Case: CISA arrives first, followed by NVD and OSV.
 
         Result:
@@ -681,6 +687,7 @@ class TestCISAKEVMultiSourceDeduplication:
         await vuln_repo.upsert_vulnerabilities(cisa_src.id, [cisa_rec])
         await db_session.commit()
         v_cisa = await vuln_repo.get_by_canonical_id("CVE-2024-1000")
+        assert v_cisa is not None
         shared_uuid = v_cisa.id
 
         # 2. NVD arrives second
@@ -772,8 +779,8 @@ class TestCISAKEVMultiSourceDeduplication:
         self,
         db_session: AsyncSession,
         kev_source: CISAKEVSource,
-        sample_kev_entry_basic: dict,
-    ):
+        sample_kev_entry_basic: dict[str, Any],
+    ) -> None:
         """Case C: OSV -> NVD -> CISA standard sequence.
 
         Verifies 1 canonical vulnerability UUID, full multi-source correlation,
@@ -819,6 +826,7 @@ class TestCISAKEVMultiSourceDeduplication:
         await vuln_repo.upsert_vulnerabilities(osv_src.id, [osv_rec])
         await db_session.commit()
         v_initial = await vuln_repo.get_by_canonical_id("CVE-2024-1000")
+        assert v_initial is not None
         target_uuid = v_initial.id
 
         # 2. NVD
@@ -882,7 +890,7 @@ class TestCISAKEVEdgeCoverage:
     """Additional edge cases to guarantee complete branch coverage."""
 
     @pytest.mark.asyncio
-    async def test_custom_http_client(self):
+    async def test_custom_http_client(self) -> None:
         async with httpx.AsyncClient() as custom_client:
             source = CISAKEVSource(http_client=custom_client)
             client, should_close = await source._get_client()
@@ -890,7 +898,7 @@ class TestCISAKEVEdgeCoverage:
             assert should_close is False
 
     @pytest.mark.asyncio
-    async def test_download_json_not_a_dict(self, kev_source: CISAKEVSource):
+    async def test_download_json_not_a_dict(self, kev_source: CISAKEVSource) -> None:
         request = httpx.Request("GET", "https://example.com/kev.json")
         response = httpx.Response(200, request=request, json=["not", "a", "dict"])
         with (
@@ -899,17 +907,19 @@ class TestCISAKEVEdgeCoverage:
         ):
             await kev_source._download("https://example.com/kev.json")
 
-    def test_parse_too_many_errors_aborts(self, kev_source: CISAKEVSource):
+    def test_parse_too_many_errors_aborts(self, kev_source: CISAKEVSource) -> None:
         bad_entries = [{"cveID": ""} for _ in range(105)]
         with pytest.raises(SourceParseError, match="Too many parse errors"):
             kev_source._parse({"vulnerabilities": bad_entries})
 
-    def test_parse_no_valid_records_from_nonempty_vulnerabilities(self, kev_source: CISAKEVSource):
+    def test_parse_no_valid_records_from_nonempty_vulnerabilities(
+        self, kev_source: CISAKEVSource
+    ) -> None:
         bad_entries = [{"cveID": "INVALID-1"}, {"cveID": "INVALID-2"}]
         with pytest.raises(SourceParseError, match="No records parsed"):
             kev_source._parse({"vulnerabilities": bad_entries})
 
-    def test_parse_date_edge_cases(self, kev_source: CISAKEVSource):
+    def test_parse_date_edge_cases(self, kev_source: CISAKEVSource) -> None:
         # Empty string
         assert kev_source._parse_date("") is None
         assert kev_source._parse_date("   ") is None
@@ -926,7 +936,7 @@ class TestCISAKEVEdgeCoverage:
         assert kev_source._parse_date("2024-invalid") is None
 
     @pytest.mark.asyncio
-    async def test_search_vendor_matching(self, kev_source: CISAKEVSource):
+    async def test_search_vendor_matching(self, kev_source: CISAKEVSource) -> None:
         entry = {
             "cveID": "CVE-2024-9999",
             "vendorProject": "Fortinet",
