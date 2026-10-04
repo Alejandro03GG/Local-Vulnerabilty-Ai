@@ -7,9 +7,8 @@ import tarfile
 from pathlib import Path
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 
-from vuln_ai.api.main import create_app
 from vuln_ai.container.archive import (
     ArchiveSecurityError,
     ArchiveSecurityLimits,
@@ -155,38 +154,36 @@ def test_safe_symlink_checks():
 
 
 @pytest.mark.asyncio
-async def test_container_api_error_branches():
+async def test_container_api_error_branches(api_client: AsyncClient):
     """Test 404 error branches on container image endpoints."""
-    app = create_app()
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # Get nonexistent image
-        res = await client.get("/api/v1/images/nonexistent-id")
-        assert res.status_code == 404
+    client = api_client
+    # Get nonexistent image
+    res = await client.get("/api/v1/images/nonexistent-id")
+    assert res.status_code == 404
 
-        # Get nonexistent image layers
-        res_l = await client.get("/api/v1/images/nonexistent-id/layers")
-        assert res_l.status_code == 404
+    # Get nonexistent image layers
+    res_l = await client.get("/api/v1/images/nonexistent-id/layers")
+    assert res_l.status_code == 404
 
-        # Get nonexistent image components
-        res_c = await client.get("/api/v1/images/nonexistent-id/components")
-        assert res_c.status_code == 404
+    # Get nonexistent image components
+    res_c = await client.get("/api/v1/images/nonexistent-id/components")
+    assert res_c.status_code == 404
 
-        # Get nonexistent image vulnerabilities
-        res_v = await client.get("/api/v1/images/nonexistent-id/vulnerabilities")
-        assert res_v.status_code == 404
+    # Get nonexistent image vulnerabilities
+    res_v = await client.get("/api/v1/images/nonexistent-id/vulnerabilities")
+    assert res_v.status_code == 404
 
-        # Get nonexistent image dependency graph
-        res_g = await client.get("/api/v1/images/nonexistent-id/dependency-graph")
-        assert res_g.status_code == 404
+    # Get nonexistent image dependency graph
+    res_g = await client.get("/api/v1/images/nonexistent-id/dependency-graph")
+    assert res_g.status_code == 404
 
-        # Get nonexistent image policy
-        res_p = await client.get("/api/v1/images/nonexistent-id/policy")
-        assert res_p.status_code == 404
+    # Get nonexistent image policy
+    res_p = await client.get("/api/v1/images/nonexistent-id/policy")
+    assert res_p.status_code == 404
 
-        # Dockerfile scan without content or path
-        res_d = await client.post("/api/v1/container/dockerfile/scan", json={})
-        assert res_d.status_code == 400
+    # Dockerfile scan without content or path
+    res_d = await client.post("/api/v1/container/dockerfile/scan", json={})
+    assert res_d.status_code == 400
 
 
 def test_dockerfile_ast_edge_cases(tmp_path: Path):
