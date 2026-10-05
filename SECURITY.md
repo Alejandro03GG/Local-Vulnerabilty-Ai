@@ -6,97 +6,118 @@ The **Local Vulnerability AI** team takes the security and integrity of this sof
 
 ## Supported Versions
 
-Only the latest release branch receives active security updates and vulnerability patches.
+Security fixes are applied to the latest published release on the active `1.1.x` line. Older lines may not receive patches.
 
-| Version | Supported          |
-| :---    | :---               |
-| 1.0.x   | :white_check_mark: |
-| < 1.0.0 | :x:                |
+| Version | Supported |
+| :--- | :--- |
+| 1.1.x (latest, currently **1.1.3**) | :white_check_mark: |
+| 1.0.x | :warning: Critical fixes only, best effort |
+| &lt; 1.0.0 | :x: |
+
+If you are unsure which version you run: `vuln-ai version` (CLI) or check `CHANGELOG.md` / Git tags.
 
 ---
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability or privacy flaw in **Local Vulnerability AI**, please do **NOT** open a public GitHub issue, discussion thread, or pull request.
+If you discover a security vulnerability or privacy flaw in **Local Vulnerability AI**, please do **NOT** open a public GitHub issue, discussion, or pull request.
 
-Instead, please report the vulnerability privately through one of the following channels:
+### Preferred channel (private)
 
-1. **GitHub Private Security Advisory**: Use the **Security** tab of this repository and click **Report a vulnerability**. This creates a confidential channel between you and the maintainers.
-2. **Direct Maintainer Contact**: If GitHub advisories are unavailable, contact the maintainers directly through their designated security contact listed on their GitHub profile (`@alejandro03hl`).
+1. Open a **GitHub Security Advisory** for this repository:  
+   **Security → Report a vulnerability**  
+   Direct link (requires access to the repo’s Security tab):  
+   https://github.com/Alejandro03GG/Local-Vulnerabilty-Ai/security/advisories/new
 
-### What Information to Include
+2. If the **Report a vulnerability** button is missing, the repository owner must enable **Private vulnerability reporting** in GitHub:  
+   **Settings → Code security and analysis → Private vulnerability reporting**.  
+   Until that is enabled, contact the repository owner via their GitHub profile: [@Alejandro03GG](https://github.com/Alejandro03GG) (ask for a private channel; do not post exploit details in public issues).
 
-To help us triage and remediate the issue quickly, please provide as much context as possible:
+There is no separate public security email published for this project. Do not invent or guess contact addresses.
 
-- **Component Affected**: Specify whether the vulnerability is in the backend core (`vuln_ai`), the API layer, parsing routines, or the frontend web console.
-- **Vulnerability Description**: Detailed explanation of the vulnerability and its potential security impact.
-- **Proof of Concept / Steps to Reproduce**: Minimal reproducible code snippet, manifest, or HTTP payload.
-- **Environment Details**: Operating system, Python version, Node.js version, and database configuration.
-- **Mitigation Suggestions**: If you have identified a potential fix, please mention it.
+### What to include (privately)
 
-### What NOT to Include Publicly
+- **Component**: backend core, scanners, sources/sync, matcher, risk/policy, API, CLI, frontend, exports, container inspection, etc.
+- **Description**: what is wrong and the security/privacy impact.
+- **Reproduction**: minimal steps, sanitized manifests, or HTTP payloads that do **not** include secrets.
+- **Environment**: OS, Python/Node versions, Local Vulnerability AI version.
+- **Suggested mitigation** (optional).
 
-- Do **not** disclose details publicly until a patched release is published.
-- Do **not** post exploit payloads or demonstration scripts in public forums.
-- Do **not** share user manifests or proprietary source code in public channels.
+### What NOT to include publicly
+
+- Do not disclose details until a patched release (or coordinated advisory) is published.
+- Do not post exploit payloads in public forums or issues.
+- Do not share proprietary manifests, credentials, tokens, API keys, or private registry auth material.
 
 ---
 
 ## Response Timeline
 
-We follow a coordinated vulnerability disclosure process:
+Coordinated disclosure expectations:
 
-1. **Acknowledgment**: We aim to acknowledge receipt of your report within **48 hours**.
-2. **Assessment & Confirmation**: We will assess the severity, reproduce the issue, and provide an initial assessment within **5 business days**.
-3. **Remediation**: A fix will be developed in a private branch, verified against the automated test suite, and published in a security patch release.
-4. **Public Disclosure**: A public security advisory crediting the reporter (unless anonymity is requested) will be published alongside the patched release.
+1. **Acknowledgment**: aim within **48 hours** of a private report.
+2. **Assessment**: initial severity/repro assessment within **5 business days**.
+3. **Remediation**: fix developed privately, validated against the automated suite, released as a security patch when appropriate.
+4. **Public disclosure**: advisory (with reporter credit unless anonymity is requested) alongside the patched release when applicable.
+
+---
+
+## Scope — what is in / out
+
+### In scope (examples)
+
+- Path traversal, archive bombs, or unsafe parsing in scanners / container archive inspection
+- Secret persistence in SQLite or logs
+- Unintended network egress or data leakage to AI providers
+- Policy/suppression bypass that silently drops real findings without auditability
+- XSS or unsafe rendering in the local web console when viewing scan data
+- Dependency or supply-chain issues in this repository’s own release artifacts
+
+### Out of scope / limitations (product model)
+
+- Requiring Docker/Podman **runtime** execution (the product is static analysis only)
+- Cloud posture, Kubernetes runtime monitoring, or malware detonation
+- Third-party advisory correctness of OSV / NVD / CISA KEV upstream feeds themselves
+- Local misconfiguration (e.g. binding the API beyond localhost without operator controls)
+
+See also [docs/security.md](docs/security.md), [docs/image-security.md](docs/image-security.md), and [docs/privacy.md](docs/privacy.md).
 
 ---
 
 ## Architecture Security Principles
 
-As a local-first application, Local Vulnerability AI is designed around strict security boundaries:
-
-- **Source Code Privacy**: Target project code files are analyzed locally via AST/static parsers; source code is **never** transmitted to local or external AI models.
-- **No Secret Persistence**: No credentials, tokens, or external API keys are stored in the local SQLite database.
-- **Deterministic Risk Engine**: The system does not delegate risk conclusions to unvetted LLM outputs. All risk classifications are derived deterministically.
-- **Safe Network Boundaries**: Network egress is strictly restricted to user-configured intelligence feeds (OSV, NVD, CISA KEV) and the local Ollama instance (`http://localhost:11434` by default).
-
+- **Source Code Privacy**: Target project files are analyzed locally; source code is **never** transmitted to LLMs.
+- **No Secret Persistence**: Registry/Docker credentials and similar secrets must not be stored in the local SQLite database.
+- **Deterministic Risk Engine**: Risk conclusions are not delegated to unvetted LLM outputs.
+- **Safe Network Boundaries**: Egress is limited to configured intelligence feeds (OSV, NVD, CISA KEV) and optional local Ollama (`http://localhost:11434` by default).
 
 ---
 
-## Container Artifact Analysis (Etapa 17)
+## Container Artifact Analysis
 
 Local Vulnerability AI performs **static** container/image artifact analysis and does **not** execute container workloads during scanning.
 
 - No `docker run` / `docker exec` / `docker build` / `podman run` during analysis.
 - No execution of entrypoints, layer binaries, or Dockerfile commands.
-- No mandatory Docker Desktop dependency for local OCI/Docker archive inspection.
 - Registry credentials and tokens must never be persisted in the local database.
-
-See [docs/security.md](docs/security.md) and [docs/image-security.md](docs/image-security.md) for hardening details.
 
 ---
 
 ## Threat Model (Summary)
 
-Local Vulnerability AI is a **local analysis tool**. Primary threats in scope:
-
 | Threat | Mitigation |
 | :--- | :--- |
 | Malicious project manifests / lockfiles | Strict parsers, size limits, no code execution |
-| Malicious container archives / Dockerfiles | Static inspection only; archive bomb, path traversal, and symlink controls; never `docker run` / `docker build` |
+| Malicious container archives / Dockerfiles | Static inspection only; archive bomb, path traversal, and symlink controls |
 | Malicious policy YAML | `yaml.safe_load`, Pydantic `extra="forbid"`, size limits |
 | Accidental secret persistence | No registry/Docker credentials stored in SQLite |
 | AI data leakage | Optional local Ollama only; metadata-only prompts; `--no-ai` disables AI |
 | Incorrect security decisions from AI | Deterministic Matcher / Conflict / Risk / Policy remain authoritative |
 
-Out of scope for 1.0: registry authentication, Kubernetes, runtime container monitoring, malware execution, cloud posture management.
-
 ---
 
 ## Third-Party Dependencies
 
-Dependency advisories are reviewed at release time. Known deferred items for 1.0.0:
+Dependency advisories are reviewed at release time. Known deferred items (see [docs/future-work.md](docs/future-work.md)):
 
-- `react-router` / `react-router-dom` 6.30.x: moderate advisories with fixes only available via breaking React Router 7 upgrade. This application is a local SPA without SSR hydration; tracked as post-1.0 work in [docs/future-work.md](docs/future-work.md).
+- `react-router` / `react-router-dom` 6.30.x: moderate advisories with fixes primarily via React Router 7 (breaking). Local SPA without SSR; tracked as post-1.0 work.

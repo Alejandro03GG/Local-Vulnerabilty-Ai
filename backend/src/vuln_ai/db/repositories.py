@@ -2306,10 +2306,13 @@ class ContainerRepository:
         return res.scalar_one_or_none()
 
     async def list_images(self, limit: int = 50, offset: int = 0) -> list[ContainerImageDB]:
+        # Order by scan start time (ingestion), not OCI image config "created"
+        # (fixtures/old images can otherwise fall off the default page).
         stmt = (
             select(ContainerImageDB)
+            .join(ScanDB, ContainerImageDB.scan_id == ScanDB.id)
             .options(selectinload(ContainerImageDB.layers))
-            .order_by(ContainerImageDB.created_at.desc())
+            .order_by(ScanDB.started_at.desc())
             .offset(offset)
             .limit(limit)
         )

@@ -1,36 +1,60 @@
 ---
 name: Bug Report
-about: Create a report to help us improve Local Vulnerability AI
+about: Report a defect in Local Vulnerability AI (not a security vulnerability)
 title: '[BUG] '
 labels: ['bug']
 assignees: ''
 ---
 
 ## Description
-A clear and concise description of what the bug is.
 
-## Environment
-- **Local Vulnerability AI Version**: (e.g. `vuln-ai version` or `1.0.0`)
-- **OS & Architecture**: (e.g. macOS Sonoma 14.5 arm64, Ubuntu 22.04 x86_64)
-- **Installation Method**: (e.g. `pip install -e "backend/[dev]"`, CLI binary, Docker)
-- **Python Version**: (e.g. `python --version`)
-- **Node.js Version** (if UI issue): (e.g. `node --version`)
+A clear and concise description of the bug.
 
 ## Steps to Reproduce
-1. Command executed: `vuln-ai scan ...`
-2. Arguments / Manifest / Image tested:
-3. Error observed:
+
+1.
+2.
+3.
+
+Include the exact command(s), target path/manifest/image (sanitized), and flags used.
 
 ## Expected Behavior
-A clear and concise description of what you expected to happen.
+
+What you expected to happen.
 
 ## Actual Behavior
-What actually happened (e.g. traceback, error message, unexpected exit code).
+
+What happened instead (exit code, unexpected UI state, wrong applicability, etc.).
+
+## Version
+
+- Local Vulnerability AI: (e.g. `vuln-ai version` / `1.1.3`)
+- Git commit (optional):
+
+## Environment
+
+- OS & architecture: (e.g. macOS 14 arm64, Ubuntu 22.04 x86_64)
+- Python: (e.g. `python --version`)
+- Node.js (if UI): (e.g. `node --version`)
+- Install method: (e.g. `pip install -e "backend/[dev]"`, from source)
+- Offline / no-AI mode?: (yes/no)
 
 ## Relevant Logs / Output
+
 ```text
-Paste terminal output or logs here
+Paste terminal or console output here (redact secrets)
 ```
 
-## Additional Context
-Add any other context about the problem here (e.g. offline mode enabled, Ollama version, custom policy file).
+## Configuration (sanitized)
+
+Describe relevant config only (policy file name, source sync mode, custom data dir).  
+**Do not** paste API keys, tokens, passwords, private registry credentials, or full `.env` contents.
+
+## Impact
+
+- Severity for you: (blocker / major / minor / cosmetic)
+- Affects: (CLI / API / UI / scanner / matching / sources / policy / other)
+
+## Reproduction tips
+
+Anything else needed to reproduce reliably (fixture shape, ecosystem, container archive type).

@@ -57,7 +57,7 @@ pytest
 
 ### Run Tests with Coverage (Enforces $\ge 95\%$ Threshold)
 ```bash
-pytest --cov=src --cov-report=term-missing --cov-fail-under=95
+pytest --cov=vuln_ai --cov-report=term-missing --cov-fail-under=95
 ```
 
 ### Run E2E Integration Suite Only
@@ -162,7 +162,7 @@ To verify the entire repository in a single pipeline run:
 ```bash
 # Backend checks
 cd backend
-pytest --cov=src --cov-report=term-missing --cov-fail-under=95
+pytest --cov=vuln_ai --cov-report=term-missing --cov-fail-under=95
 ruff check src tests
 ruff format --check src tests
 alembic upgrade head
@@ -175,3 +175,19 @@ npm run format:check
 npm test
 npm run build
 ```
+
+---
+
+## CI parity
+
+GitHub Actions workflow [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on pushes to `main` / `release/**` and on pull requests to `main`.
+
+| Job | Checks |
+| :--- | :--- |
+| Backend Quality Gates | `alembic` upgrade/check/roundtrip, `ruff check` + `ruff format --check`, CLI smoke (`vuln-ai --version`, `--help`, `doctor`), `pytest` with ≥95% coverage |
+| Frontend Quality Gates | `npm ci`, `typecheck`, `eslint`, Prettier check, Vitest, production `build` |
+
+`mypy` is configured in `backend/pyproject.toml` but is **not** currently enforced in CI. Prefer the commands above for PR readiness.
+
+Contributor workflow details: [CONTRIBUTING.md](../CONTRIBUTING.md).
+

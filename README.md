@@ -331,15 +331,53 @@ See **[docs/future-work.md](docs/future-work.md)** for post-1.0 exploration item
 
 ---
 
+## Project structure
+
+```text
+Local-Vulnerabilty-Ai/
+├── backend/                 # Python package (CLI, API, engines, scanners, sources)
+│   ├── alembic/             # Database migrations
+│   ├── src/vuln_ai/         # Application code (core, matching, risk, policy, AI, …)
+│   ├── tests/               # Pytest suite + fixtures
+│   └── .env.example         # Backend environment template
+├── frontend/                # React + TypeScript web console (Vite)
+│   ├── src/                 # UI pages, components, API client, tests
+│   └── .env.example         # Frontend environment template
+├── docs/                    # Architecture, CLI, API, sources, policy, security, …
+├── .github/                 # CI workflows, PR/issue templates
+├── CONTRIBUTING.md          # Contributor setup and workflow
+├── SECURITY.md              # Private vulnerability reporting
+├── CHANGELOG.md             # Release history
+└── README.md                # Product overview (this file)
+```
+
+For subsystem details see [docs/architecture.md](docs/architecture.md) and [docs/development.md](docs/development.md).
+
+---
+
 ## Contributing
 
-We welcome contributions from the open-source community!
+Want to contribute? Start here:
 
-Please see **[CONTRIBUTING.md](CONTRIBUTING.md)** for our setup guide, code standards, architectural principles, and quality gates. Before opening a Pull Request, ensure that all automated quality checks pass:
+```text
+Fork → Clone → Install → Create branch → Change code → Add tests → Validate → Open PR
+```
+
+1. Fork the repository on GitHub.
+2. Clone your fork and follow setup in **[CONTRIBUTING.md](CONTRIBUTING.md)** (backend venv + frontend `npm ci`).
+3. Create a branch (`feat/…`, `fix/…`, `docs/…`).
+4. Make a focused change; add or update tests.
+5. Run the same quality gates as CI (below).
+6. Open a Pull Request with the checklist in `.github/pull_request_template.md`.
+
+Looking for ideas? See **Where can I contribute?** in [CONTRIBUTING.md](CONTRIBUTING.md).  
+Security issues: report privately via [SECURITY.md](SECURITY.md) — do not open a public issue.
+
+### Pre-PR validation
 
 ```bash
 # In backend/:
-pytest --cov=src --cov-report=term-missing --cov-fail-under=95
+pytest --cov=vuln_ai --cov-report=term-missing --cov-fail-under=95
 ruff check src tests
 ruff format --check src tests
 alembic upgrade head

@@ -3,31 +3,21 @@
 from __future__ import annotations
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 
 from tests.fixtures.container_fixtures import create_docker_image_archive
-from vuln_ai.api.main import create_app
-from vuln_ai.config import get_settings
-
-
-@pytest.fixture
-def app():
-    settings = get_settings()
-    return create_app(settings)
-
-
-@pytest.fixture
-async def client(app):
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as ac:
-        yield ac
 
 
 @pytest.mark.asyncio
-async def test_container_image_scan_and_query_endpoints(client: AsyncClient, tmp_path):
-    """Test full cycle: scan container archive, get details, layers, components, policy, graph."""
+async def test_container_image_scan_and_query_endpoints(
+    api_client: AsyncClient,
+    tmp_path,
+):
+    """Test full cycle: scan container archive, get details, layers, components, policy, graph.
+
+    Uses the shared ``api_client`` fixture (in-memory DB) so local developer
+    databases with many prior scans cannot hide the new image on page 1.
+    """
     archive_path = tmp_path / "test_api_image.tar"
     create_docker_image_archive(
         destination=archive_path,
@@ -37,7 +27,7 @@ async def test_container_image_scan_and_query_endpoints(client: AsyncClient, tmp
     )
 
     # 1. POST /api/v1/images/scan
-    scan_res = await client.post(
+    scan_res = await api_client.post(
         "/api/v1/images/scan",
         json={
             "archive_path": str(archive_path),
@@ -53,25 +43,28 @@ async def test_container_image_scan_and_query_endpoints(client: AsyncClient, tmp
     assert data["layer_count"] == 1
     assert len(data["layers"]) == 1
 
-    # 2. GET /api/v1/images
-    list_res = await client.get("/api/v1/images")
+    # 2. GET /api/v1/images — newest scan must appear on the default first page
+    # even when the OCI config "created" timestamp is old (fixture uses 2026-01-01).
+    list_res = await api_client.get("/api/v1/images")
     assert list_res.status_code == 200
     list_data = list_res.json()
     assert list_data["total"] >= 1
+    assert list_data["items"], "expected at least one listed image"
+    assert list_data["items"][0]["id"] == image_id
     assert any(img["id"] == image_id for img in list_data["items"])
 
     # 3. GET /api/v1/images/{image_id}
-    get_res = await client.get(f"/api/v1/images/{image_id}")
+    get_res = await api_client.get(f"/api/v1/images/{image_id}")
     assert get_res.status_code == 200
     assert get_res.json()["id"] == image_id
 
     # 4. GET /api/v1/images/{image_id}/layers
-    layers_res = await client.get(f"/api/v1/images/{image_id}/layers")
+    layers_res = await api_client.get(f"/api/v1/images/{image_id}/layers")
     assert layers_res.status_code == 200
     assert len(layers_res.json()) == 1
 
     # 5. GET /api/v1/images/{image_id}/components
-    comps_res = await client.get(f"/api/v1/images/{image_id}/components")
+    comps_res = await api_client.get(f"/api/v1/images/{image_id}/components")
     assert comps_res.status_code == 200
     comps = comps_res.json()
     assert len(comps) == 1
@@ -80,19 +73,19 @@ async def test_container_image_scan_and_query_endpoints(client: AsyncClient, tmp
     assert comps[0]["ecosystem"] == "deb"
 
     # 6. GET /api/v1/images/{image_id}/vulnerabilities
-    vulns_res = await client.get(f"/api/v1/images/{image_id}/vulnerabilities")
+    vulns_res = await api_client.get(f"/api/v1/images/{image_id}/vulnerabilities")
     assert vulns_res.status_code == 200
     assert isinstance(vulns_res.json(), list)
 
     # 7. GET /api/v1/images/{image_id}/dependency-graph
-    graph_res = await client.get(f"/api/v1/images/{image_id}/dependency-graph")
+    graph_res = await api_client.get(f"/api/v1/images/{image_id}/dependency-graph")
     assert graph_res.status_code == 200
     graph_data = graph_res.json()
     assert graph_data["image_id"] == image_id
     assert len(graph_data["nodes"]) >= 1
 
     # 8. GET /api/v1/images/{image_id}/policy
-    pol_res = await client.get(f"/api/v1/images/{image_id}/policy")
+    pol_res = await api_client.get(f"/api/v1/images/{image_id}/policy")
     assert pol_res.status_code == 200
     pol_data = pol_res.json()
     assert "status" in pol_data
@@ -100,14 +93,14 @@ async def test_container_image_scan_and_query_endpoints(client: AsyncClient, tmp
 
 
 @pytest.mark.asyncio
-async def test_container_dockerfile_scan_endpoint(client: AsyncClient):
+async def test_container_dockerfile_scan_endpoint(api_client: AsyncClient):
     """Test POST /api/v1/container/dockerfile/scan."""
     dockerfile_content = """FROM python:3.12-slim AS runtime
 RUN apt-get update && apt-get install -y curl
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 """
-    res = await client.post(
+    res = await api_client.post(
         "/api/v1/container/dockerfile/scan",
         json={"content": dockerfile_content},
     )
@@ -120,9 +113,9 @@ RUN pip install -r requirements.txt
 
 
 @pytest.mark.asyncio
-async def test_container_scan_nonexistent_file(client: AsyncClient):
+async def test_container_scan_nonexistent_file(api_client: AsyncClient):
     """Verify 400 error when scanning non-existent archive."""
-    res = await client.post(
+    res = await api_client.post(
         "/api/v1/images/scan",
         json={"archive_path": "/nonexistent/path/image.tar"},
     )

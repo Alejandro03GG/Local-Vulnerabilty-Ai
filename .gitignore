@@ -67,3 +67,16 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .eslintcache
+frontend/dist/
+frontend/coverage/
+.vite/
+*.tsbuildinfo
+
+# Local / editor artifacts
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Coverage artifacts
+coverage.json
