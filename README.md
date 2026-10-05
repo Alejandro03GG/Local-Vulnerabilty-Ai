@@ -28,7 +28,7 @@ Modern software development relies heavily on open-source dependencies and conta
 
 ## Features
 
-Local Vulnerability AI 1.0.0 delivers a feature-complete, production-ready local security stack:
+Local Vulnerability AI 1.1.3 delivers a feature-complete, production-ready local security stack:
 
 - **Dependency Scanning**: Automatic discovery and parsing of Python (`requirements.txt`, `pyproject.toml`, `poetry.lock`), Node.js (`package.json`, `package-lock.json`, `pnpm-lock.yaml`), and Rust (`Cargo.toml`, `Cargo.lock`).
 - **Dependency Graph**: Directed acyclic graph tracking direct vs. transitive relationships, resolution depth, and multi-version package support (e.g. `lodash@3.x` and `lodash@4.x` coexisting).
@@ -219,7 +219,7 @@ For technical details, see **[docs/ai.md](docs/ai.md)**.
 
 ## Container Scanning
 
-Local Vulnerability AI 1.0.0 features a dedicated, pure static container and image analysis engine:
+Local Vulnerability AI 1.1.3 features a dedicated, pure static container and image analysis engine:
 
 - **Zero-Execution Guarantee**: Scans OCI and Docker image archives (`.tar`) and Dockerfiles completely statically. The scanner **never** calls `docker run`, `docker exec`, `docker build`, `podman`, or container runtimes.
 - **Rootless & Daemonless**: Operates without a Docker daemon, socket connection, or root privileges.
@@ -236,7 +236,7 @@ vuln-ai image scan ./my-image.tar --no-ai
 vuln-ai image scan ./Dockerfile --no-ai
 ```
 
-> **Notice**: Container registry remote authentication, runtime monitoring, and Kubernetes cluster scanning are **intentionally not included** in 1.0.0. See [docs/container-scanning.md](docs/container-scanning.md) and [docs/dockerfile-scanning.md](docs/dockerfile-scanning.md).
+> **Notice**: Container registry remote authentication, runtime monitoring, and Kubernetes cluster scanning are **intentionally not included** in 1.1.3. See [docs/container-scanning.md](docs/container-scanning.md) and [docs/dockerfile-scanning.md](docs/dockerfile-scanning.md).
 
 ---
 
@@ -318,7 +318,7 @@ We take the security of this project and its dependency analysis pipeline seriou
 
 ## Limitations
 
-Local Vulnerability AI 1.0.0 focuses on **deterministic, local-first static analysis**. The following capabilities are **intentionally out of scope**:
+Local Vulnerability AI 1.1.3 focuses on **deterministic, local-first static analysis**. The following capabilities are **intentionally out of scope**:
 
 - **No Remote Registry Authentication**: Scans local `.tar` archives only; does not store or manage Docker registry credentials.
 - **No Docker Daemon Dependency**: Does not communicate with Docker or Podman daemons.
