@@ -119,6 +119,11 @@ class PolicyService:
             policy_id=policy_id,
             policy_content=policy_content,
         )
+        # Ensure the resolved policy is visible via GET /policies (H22).
+        policy = await self.ensure_persisted(
+            policy,
+            source="api-evaluate" if (policy_id or policy_content) else "resolved",
+        )
 
         # Fetch suppressions
         db_sups = await self.suppression_repo.list_all(project_id=scan.project_id)
@@ -139,3 +144,25 @@ class PolicyService:
         await self.policy_repo.save_evaluation(result, scan_id=scan_id)
 
         return result
+
+    async def ensure_persisted(self, policy: Policy, *, source: str | None = None) -> Policy:
+        """Upsert a policy by name so CLI/API evaluations appear in GET /policies.
+
+        Preserves the database UUID when a policy with the same name already exists.
+        """
+        meta = dict(policy.metadata or {})
+        if source:
+            meta["source"] = source
+        policy.metadata = meta
+
+        existing = await self.policy_repo.get_by_name(policy.name)
+        if existing is not None:
+            # Keep stable DB identity for API consumers.
+            policy.id = existing.id
+            updated = await self.policy_repo.update(existing.id, policy)
+            if updated is None:
+                return policy
+            return self.policy_repo.to_domain(updated)
+
+        created = await self.policy_repo.create(policy)
+        return self.policy_repo.to_domain(created)

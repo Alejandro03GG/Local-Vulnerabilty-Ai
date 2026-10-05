@@ -94,21 +94,27 @@ class SourceService:
             prune_missing = (
                 db_source.source_type == "cisa_kev" and bool(source_impl.records)
             )
-            count = await self._vuln_repo.upsert_vulnerabilities(
+            await self._vuln_repo.upsert_vulnerabilities(
                 source_id=db_source.id,
                 records=source_impl.records,
                 prune_missing=prune_missing,
             )
+            # H16: report catalog size for this source, not raw batch length.
+            catalog_count = await self._vuln_repo.count_by_source(db_source.id)
             await self._source_repo.update_sync_status(
                 source_id=db_source.id,
                 status=SourceStatus.ACTIVE,
-                record_count=count,
+                record_count=catalog_count,
             )
-            logger.info("Source '%s' successfully synced with %d records", db_source.name, count)
+            logger.info(
+                "Source '%s' successfully synced with %d catalog records",
+                db_source.name,
+                catalog_count,
+            )
             return SourceSyncResponse(
                 source=db_source.name,
                 success=True,
-                records=count,
+                records=catalog_count,
                 error=None,
                 duration=duration,
             )

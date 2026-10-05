@@ -554,3 +554,10 @@ vuln-ai image scan /path/to/Dockerfile --format json
 - npm ecosystems: `package-lock.json` and multi-document `pnpm-lock.yaml`.
 - When using `-o/--output`, machine-readable exports are written to the file only; stdout stays operational (H15).
 - `vuln-ai image scan Dockerfile` persists the static AST when the local DB is initialized.
+
+## Known Limitations
+
+### H20 — Projects without lockfiles (e.g. Juice Shop)
+
+The npm scanner expects a resolvable lockfile (`package-lock.json` or `pnpm-lock.yaml`) for exact version matching. Some upstream projects (notably OWASP Juice Shop) ship with `package-lock=false` and do **not** publish a lockfile. That is a **fixture/harness limitation**, not a product defect: generating a lockfile outside the scanner (as a test harness may do) is out of scope for Local Vulnerability AI. Classified **WONT_FIX / HARNESS LIMITATION**.
+

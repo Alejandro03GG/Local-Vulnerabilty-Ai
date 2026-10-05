@@ -1,0 +1,8 @@
+[package]
+name = "sample-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sample-lib = { path = "../lib" }
+serde = "1.0.197"

@@ -51,10 +51,23 @@ class CargoLockScanner:
         graph = self.scan_graph(project_path)
         return graph.resolve_components()
 
+
+    def _locate_cargo_lock(self, project_path: Path, *, max_up: int = 4) -> Path | None:
+        """Find Cargo.lock in project_path or a limited number of parent directories."""
+        current = project_path.resolve()
+        for _ in range(max_up + 1):
+            candidate = current / "Cargo.lock"
+            if candidate.is_file():
+                return candidate
+            if current.parent == current:
+                break
+            current = current.parent
+        return None
+
     def scan_graph(self, project_path: Path) -> DependencyGraph:
         """Parse Cargo.lock and construct full DependencyGraph."""
         graph = DependencyGraph()
-        lock_file = project_path / "Cargo.lock"
+        lock_file = self._locate_cargo_lock(project_path) or (project_path / "Cargo.lock")
         manifest_file = project_path / "Cargo.toml"
 
         direct_crates: set[str] = set()
@@ -90,8 +103,9 @@ class CargoLockScanner:
         if not isinstance(packages, list):
             return graph
 
-        # First pass: identify root package in Cargo.lock if not known
-        # In Cargo.lock, local workspace/root crates do not have a "source" field
+        # First pass: walk sourceless (path/workspace) packages to discover direct edges.
+        # H23: only skip the scanned crate's own [package].name as a "root". Other
+        # sourceless lock entries are path members and MUST keep their lock versions.
         direct_crate_versions: dict[str, str | None] = {}
         for pkg in packages:
             if not isinstance(pkg, dict):
@@ -100,14 +114,15 @@ class CargoLockScanner:
             if not name:
                 continue
             if "source" not in pkg:
-                root_package_names.add(normalize_component_name(name))
-                # Add its dependencies as direct if not already known
-                for dep_entry in pkg.get("dependencies", []):
-                    c_name, c_ver = self._parse_cargo_dependency_string(str(dep_entry))
-                    norm_c = normalize_component_name(c_name)
-                    direct_crates.add(norm_c)
-                    if c_ver:
-                        direct_crate_versions[norm_c] = c_ver
+                # Dependencies of path/workspace members are direct when declared by a root.
+                norm_pkg = normalize_component_name(name)
+                if norm_pkg in root_package_names:
+                    for dep_entry in pkg.get("dependencies", []):
+                        c_name, c_ver = self._parse_cargo_dependency_string(str(dep_entry))
+                        norm_c = normalize_component_name(c_name)
+                        direct_crates.add(norm_c)
+                        if c_ver:
+                            direct_crate_versions[norm_c] = c_ver
 
         # Second pass: build nodes and edges
         for pkg in packages:
@@ -234,14 +249,21 @@ class CargoLockScanner:
                 continue
             for name, spec in section.items():
                 constraint = None
+                resolved_version = None
                 if isinstance(spec, str):
                     constraint = spec
                 elif isinstance(spec, dict):
                     constraint = spec.get("version")
+                    if not constraint and isinstance(spec.get("path"), str):
+                        resolved_version = self._resolve_path_dependency_version(
+                            manifest_path, spec["path"]
+                        )
+                        if resolved_version:
+                            constraint = resolved_version
 
                 node = DependencyNode.create(
                     name=name,
-                    version=None,
+                    version=resolved_version,
                     ecosystem=Ecosystem.CARGO,
                     source_file=str(manifest_path),
                     is_direct=True,
@@ -250,6 +272,32 @@ class CargoLockScanner:
                     version_constraint=constraint,
                 )
                 graph.add_node(node)
+
+
+    @staticmethod
+    def _resolve_path_dependency_version(manifest_path: Path, path_spec: str) -> str | None:
+        """Resolve version for a Cargo path dependency by reading its Cargo.toml.
+
+        Static parse only — never executes cargo/build scripts.
+        """
+        try:
+            dep_manifest = (manifest_path.parent / path_spec / "Cargo.toml").resolve()
+            # Contain reads to the scanned project tree when possible.
+            project_root = manifest_path.parent.resolve()
+            if project_root not in dep_manifest.parents and dep_manifest.parent != project_root:
+                # Allow sibling paths under a shared workspace parent (one level up).
+                workspace_root = project_root.parent
+                if workspace_root not in dep_manifest.parents and dep_manifest.parent != workspace_root:
+                    logger.debug("Refusing path dependency outside workspace tree: %s", dep_manifest)
+                    return None
+            if not dep_manifest.is_file():
+                return None
+            data = tomllib.loads(dep_manifest.read_text(encoding="utf-8"))
+            version = data.get("package", {}).get("version")
+            return str(version) if version else None
+        except Exception as exc:
+            logger.debug("Failed to resolve path dependency version for %s: %s", path_spec, exc)
+            return None
 
     @staticmethod
     def _parse_cargo_dependency_string(dep_str: str) -> tuple[str, str | None]:

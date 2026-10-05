@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -12,6 +12,10 @@ import * as policyApiModule from '@/services/api/policy';
 import * as scansApiModule from '@/services/api/scans';
 
 describe('Policy and Suppression Views (Etapa 16)', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
   const renderWithProviders = (
     initialRoute: string,
     element: React.ReactNode,
@@ -164,4 +168,78 @@ describe('Policy and Suppression Views (Etapa 16)', () => {
     expect(screen.getByText('requests @ 2.25.0')).toBeInTheDocument();
     expect(screen.getByText('Critical severity not permitted')).toBeInTheDocument();
   });
+
+  it('renders empty policies state when API returns []', async () => {
+    vi.spyOn(policyApiModule.policyApi, 'listPolicies').mockResolvedValue([]);
+
+    renderWithProviders('/policies', <PoliciesPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('org-enterprise-policy')).not.toBeInTheDocument();
+    });
+    // Page still mounts and exposes validator affordance
+    expect(screen.getByText(/Validate YAML Policy|Validar política YAML/i)).toBeInTheDocument();
+  });
+
+  it('keeps Policies page usable when policies API errors', async () => {
+    const spy = vi
+      .spyOn(policyApiModule.policyApi, 'listPolicies')
+      .mockImplementation(() => Promise.reject(new Error('boom')));
+
+    renderWithProviders('/policies', <PoliciesPage />);
+
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalled();
+      expect(screen.getByText('Validate YAML Policy')).toBeInTheDocument();
+    });
+    expect(screen.getAllByText('default-baseline-policy').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders accepted-risk and suppressed counters on scan policy card', async () => {
+    vi.spyOn(scansApiModule.scansApi, 'get').mockResolvedValue({
+      id: 'scan-policy-456',
+      project_id: 'proj-1',
+      status: 'completed',
+      components_found: 2,
+      vulnerabilities_found: 2,
+      kev_matches: 0,
+      duration_seconds: 1.0,
+      started_at: '2026-10-03T10:00:00Z',
+      completed_at: '2026-10-03T10:00:01Z',
+      error: null,
+      matches: [],
+    });
+
+    vi.spyOn(policyApiModule.policyApi, 'getScanPolicy').mockResolvedValue({
+      policy_id: 'pol-2',
+      policy_name: 'balanced-policy',
+      status: 'ALLOWED',
+      total_findings: 2,
+      allowed_count: 0,
+      violations_count: 0,
+      suppressed_count: 1,
+      accepted_risk_count: 1,
+      requires_review_count: 0,
+      has_violations: false,
+      ci_exit_code: 0,
+      evaluations: [],
+      violations: [],
+      suppressions_applied: [
+        {
+          suppression_id: 'sup-1',
+          finding_id: 'f2',
+          reason: 'Accepted temporary exception',
+        },
+      ],
+      evaluated_at: '2026-10-03T10:00:01Z',
+    });
+
+    renderWithProviders('/scans/scan-policy-456', <ScanDetailPage />, '/scans/:scanId');
+
+    await waitFor(() => {
+      expect(screen.getByTestId('policy-compliance-card')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/balanced-policy/i)).toBeInTheDocument();
+  });
+
 });

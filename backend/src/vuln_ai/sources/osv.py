@@ -265,9 +265,13 @@ class OSVSource:
 
         Since OSV contains millions of records, sync validates connectivity and
         reports available status. Direct package scans query OSV on demand.
+
+        H16: clear the in-memory cache before probing so repeated sync() calls on
+        the same adapter instance do not inflate upsert batches with stale probes.
         """
         start = datetime.now(UTC)
         try:
+            self._cached_records = []
             # Probe OSV with a lightweight query to verify operational availability
             probe = await self.query_package("requests", Ecosystem.PYPI)
             duration = (datetime.now(UTC) - start).total_seconds()

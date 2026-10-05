@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- H22: CLI/API policy evaluation now upserts policies and evaluation snapshots so GET /policies and the Policies UI stay in sync with scans.
+- H12: `docs/policy.md` examples and applicability vocabulary aligned with the real policy schema; docs YAML fences are validated in tests.
+- H16: OSV sync clears in-memory probe cache; alias lookups are case-insensitive; preexisting alias orphan rows are merged on bridge upserts; source `record_count` reflects catalog size.
+- H23: Cargo path/workspace members keep lockfile versions; path dependencies resolve versions from target `Cargo.toml` when lock data is absent.
+- H11: clean false-positive fixture pins updated away from currently affected `requests==2.32.3`.
+
+### Documented
+- H20: Juice Shop missing upstream `package-lock.json` classified as WONT_FIX / harness limitation.
+
+
 ## [1.1.1] - 2026-10-04
 
 ### Fixed

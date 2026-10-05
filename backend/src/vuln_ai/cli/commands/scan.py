@@ -30,7 +30,7 @@ from vuln_ai.policy.clock import SystemClock
 from vuln_ai.policy.engine import PolicyEngine
 from vuln_ai.policy.errors import PolicyError, PolicyParseError, PolicyValidationError
 from vuln_ai.policy.parser import load_policy_file
-from vuln_ai.policy.service import get_default_policy
+from vuln_ai.policy.service import PolicyService, get_default_policy
 from vuln_ai.risk.engine import DeterministicRiskEngine
 
 SEVERITY_WEIGHTS = {
@@ -209,12 +209,31 @@ async def _execute_scan_async(
                         combined_sups.append(dom_s)
                         existing_ids.add(dom_s.id)
 
+                # H22: persist the policy used for this scan so GET /policies and the UI
+                # can audit the same document the CLI evaluated.
+                policy_source = (
+                    "cli-file"
+                    if policy_file is not None
+                    else ("project-yaml" if is_explicit_policy else "default")
+                )
+                policy_service = PolicyService(session, clock=SystemClock())
+                policy_obj = await policy_service.ensure_persisted(
+                    policy_obj,
+                    source=policy_source,
+                )
+
                 p_engine = PolicyEngine(
                     policy=policy_obj,
                     suppressions=combined_sups,
                     clock=SystemClock(),
                 )
                 policy_eval = p_engine.evaluate(summary.matches)
+
+                if summary.scan_id:
+                    await policy_service.policy_repo.save_evaluation(
+                        policy_eval,
+                        scan_id=summary.scan_id,
+                    )
 
             except (PolicyParseError, PolicyValidationError, PolicyError) as exc:
                 console_stderr.print(f"[bold red]Policy error:[/bold red] {exc}")

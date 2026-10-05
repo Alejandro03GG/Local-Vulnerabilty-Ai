@@ -446,21 +446,41 @@ class VulnerabilityRepository:
         for record in records:
             canonical_id = record.canonical_id or record.cve_id or ""
 
-            # Gather candidate keys for deduplication
+            # Gather candidate keys for deduplication (normalize CVE/GHSA case)
+            def _norm_key(value: str) -> str:
+                v = value.strip()
+                upper = v.upper()
+                # CVE IDs are canonically uppercase; GHSA/RUSTSEC keep source casing.
+                if upper.startswith("CVE-"):
+                    return upper
+                return v
+
             candidate_keys: list[str] = []
             if canonical_id:
-                candidate_keys.append(canonical_id)
-            if record.cve_id and record.cve_id not in candidate_keys:
-                candidate_keys.append(record.cve_id)
+                candidate_keys.append(_norm_key(canonical_id))
+            if record.cve_id:
+                nk = _norm_key(record.cve_id)
+                if nk not in candidate_keys:
+                    candidate_keys.append(nk)
             for ident in record.identifiers:
-                if ident.identifier not in candidate_keys:
-                    candidate_keys.append(ident.identifier)
+                nk = _norm_key(ident.identifier)
+                if nk not in candidate_keys:
+                    candidate_keys.append(nk)
 
-            existing_vuln: VulnerabilityDB | None = None
+            matched: dict[str, VulnerabilityDB] = {}
             for key in candidate_keys:
-                existing_vuln = await self.get_by_identifier(key)
-                if existing_vuln:
-                    break
+                for row in await self.find_all_by_identifier(key):
+                    matched[row.id] = row
+
+            if matched:
+                winner = self._pick_canonical_vuln(list(matched.values()))
+                losers = [v for v in matched.values() if v.id != winner.id]
+                if losers:
+                    winner = await self._merge_vulnerability_rows(winner, losers)
+                db_vuln = winner
+                existing_vuln = winner
+            else:
+                existing_vuln = None
 
             if existing_vuln:
                 db_vuln = existing_vuln
@@ -504,9 +524,16 @@ class VulnerabilityRepository:
                 ) and record.known_ransomware_use != "Unknown":
                     db_vuln.known_ransomware_use = record.known_ransomware_use
             else:
+                stored_canonical = canonical_id
+                upper_c = (canonical_id or "").upper()
+                if upper_c.startswith("CVE-"):
+                    stored_canonical = upper_c
+                stored_cve = record.cve_id
+                if stored_cve and stored_cve.strip().upper().startswith("CVE-"):
+                    stored_cve = stored_cve.strip().upper()
                 db_vuln = VulnerabilityDB(
-                    canonical_id=canonical_id,
-                    cve_id=record.cve_id,
+                    canonical_id=stored_canonical,
+                    cve_id=stored_cve,
                     source_id=source_id,
                     vendor_project=record.vendor_project,
                     product=record.product,
@@ -544,12 +571,16 @@ class VulnerabilityRepository:
                 )
 
             for ident in record.identifiers:
-                if ident.identifier not in known_idents:
-                    known_idents.add(ident.identifier)
+                stored = ident.identifier.strip()
+                upper = stored.upper()
+                if upper.startswith("CVE-"):
+                    stored = upper
+                if stored not in known_idents and upper not in {k.upper() for k in known_idents}:
+                    known_idents.add(stored)
                     self._session.add(
                         VulnerabilityIdentifierDB(
                             vulnerability_id=db_vuln.id,
-                            identifier=ident.identifier,
+                            identifier=stored,
                             identifier_type=str(ident.identifier_type),
                             source=ident.source,
                         )
@@ -723,31 +754,133 @@ class VulnerabilityRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_identifier(self, identifier: str) -> VulnerabilityDB | None:
-        """Find a vulnerability by any identifier or alias."""
-        # Direct check on canonical_id or cve_id
+    async def find_all_by_identifier(self, identifier: str) -> list[VulnerabilityDB]:
+        """Find all vulnerability rows matching an identifier/alias (H16 bridge safety)."""
+        if not identifier:
+            return []
+        needle = identifier.strip().upper()
         result = await self._session.execute(
             select(VulnerabilityDB)
             .where(
-                (VulnerabilityDB.canonical_id == identifier)
-                | (VulnerabilityDB.cve_id == identifier)
+                (func.upper(VulnerabilityDB.canonical_id) == needle)
+                | (func.upper(VulnerabilityDB.cve_id) == needle)
             )
             .options(*self._LOAD_OPTIONS)
         )
-        vuln = result.scalar_one_or_none()
-        if vuln:
-            return vuln
+        found = {v.id: v for v in result.scalars().all()}
 
-        # Check aliases in vulnerability_identifiers
         ident_res = await self._session.execute(
             select(VulnerabilityIdentifierDB).where(
-                VulnerabilityIdentifierDB.identifier == identifier
+                func.upper(VulnerabilityIdentifierDB.identifier) == needle
             )
         )
-        ident_record = ident_res.scalar_one_or_none()
-        if ident_record:
-            return await self.get_by_id(ident_record.vulnerability_id)
-        return None
+        for ident_record in ident_res.scalars().all():
+            if ident_record.vulnerability_id not in found:
+                row = await self.get_by_id(ident_record.vulnerability_id)
+                if row is not None:
+                    found[row.id] = row
+        return list(found.values())
+
+    async def get_by_identifier(self, identifier: str) -> VulnerabilityDB | None:
+        """Find a vulnerability by any identifier or alias.
+
+        If duplicate alias rows exist historically, prefer the canonical-priority row
+        (CVE > GHSA > other) instead of raising MultipleResultsFound.
+        """
+        rows = await self.find_all_by_identifier(identifier)
+        if not rows:
+            return None
+        if len(rows) == 1:
+            return rows[0]
+        return self._pick_canonical_vuln(rows)
+
+    @staticmethod
+    def _canonical_rank(vuln: VulnerabilityDB) -> tuple[int, str]:
+        cid = (vuln.canonical_id or vuln.cve_id or "").upper()
+        if cid.startswith("CVE-"):
+            return (0, cid)
+        if cid.startswith("GHSA-"):
+            return (1, cid)
+        if cid.startswith("RUSTSEC-"):
+            return (2, cid)
+        return (3, cid)
+
+    def _pick_canonical_vuln(self, rows: list[VulnerabilityDB]) -> VulnerabilityDB:
+        return sorted(rows, key=self._canonical_rank)[0]
+
+    async def _merge_vulnerability_rows(
+        self, winner: VulnerabilityDB, losers: list[VulnerabilityDB]
+    ) -> VulnerabilityDB:
+        """Reassign identifiers/ranges/source records from losers into winner, then delete losers."""
+        for loser in losers:
+            if loser.id == winner.id:
+                continue
+            # Identifiers
+            loser_idents = await self.get_identifiers(loser.id)
+            winner_idents = await self.get_identifiers(winner.id)
+            known = {i.identifier for i in winner_idents}
+            for ident in loser_idents:
+                if ident.identifier in known:
+                    await self._session.delete(ident)
+                else:
+                    ident.vulnerability_id = winner.id
+                    known.add(ident.identifier)
+
+            # Source records
+            loser_srs = await self.get_source_records(loser.id)
+            winner_srs = await self.get_source_records(winner.id)
+            sr_keys = {(sr.source_id, sr.source_identifier) for sr in winner_srs}
+            for sr in loser_srs:
+                key = (sr.source_id, sr.source_identifier)
+                if key in sr_keys:
+                    await self._session.delete(sr)
+                else:
+                    sr.vulnerability_id = winner.id
+                    sr_keys.add(key)
+
+            # Ranges (best-effort dedupe by tuple fingerprint)
+            loser_ranges = await self.get_affected_ranges(loser.id)
+            winner_ranges = await self.get_affected_ranges(winner.id)
+            range_keys = {
+                (
+                    r.ecosystem,
+                    r.package_name,
+                    r.introduced,
+                    r.fixed,
+                    r.last_affected,
+                    r.raw_range,
+                )
+                for r in winner_ranges
+            }
+            for r in loser_ranges:
+                key = (
+                    r.ecosystem,
+                    r.package_name,
+                    r.introduced,
+                    r.fixed,
+                    r.last_affected,
+                    r.raw_range,
+                )
+                if key in range_keys:
+                    await self._session.delete(r)
+                else:
+                    r.vulnerability_id = winner.id
+                    range_keys.add(key)
+
+            # Promote empty winner fields from loser
+            if not winner.cve_id and loser.cve_id:
+                winner.cve_id = loser.cve_id
+            if (not winner.canonical_id or not winner.canonical_id.upper().startswith("CVE-")) and (
+                loser.canonical_id or ""
+            ).upper().startswith("CVE-"):
+                winner.canonical_id = loser.canonical_id
+                winner.cve_id = loser.cve_id or loser.canonical_id
+
+            await self._session.flush()
+            await self._session.delete(loser)
+            await self._session.flush()
+
+        return winner
 
     async def find_by_package(self, ecosystem: str, package_name: str) -> list[VulnerabilityDB]:
         """Find vulnerabilities with affected version ranges matching ecosystem and package."""

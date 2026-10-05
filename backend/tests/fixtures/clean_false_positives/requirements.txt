@@ -1,0 +1,7 @@
+# H11: clean false-positive fixture for offline/product tests.
+# Updated 2026-10-04 because requests==2.32.3 is within current OSV
+# ranges for CVE-2024-47081 (<2.32.4) and CVE-2026-25645 (<2.33.0).
+# Pins below are chosen to sit outside those affected ranges.
+requests==2.33.0
+pydantic==2.8.2
+fastapi==0.115.0

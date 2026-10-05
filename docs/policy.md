@@ -78,7 +78,7 @@ Every rule specifies a `when` condition block. All specified filters must match 
 |---|---|---|
 | `severity` | `str \| list[str]` | Vulnerability advisory severity (e.g. `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`) |
 | `risk_level` | `str \| list[str]` | Deterministic risk level calculated by the risk engine |
-| `applicability` | `str \| list[str]` | Canonical status (`AFFECTED`, `LIKELY_AFFECTED`, `SUSPECTED`, `REQUIRES_REVIEW`, `LIKELY_NOT_AFFECTED`, `NOT_AFFECTED`) |
+| `applicability` | `str \| list[str]` | Canonical status (`DETECTED`, `LIKELY_AFFECTED`, `LIKELY_NOT_AFFECTED`, `REQUIRES_REVIEW`, `UNKNOWN`) |
 | `dependency_type` | `str \| list[str]` | `DIRECT` or `TRANSITIVE` dependency location in graph |
 | `scope` | `str \| list[str]` | Dependency scope: `RUNTIME`, `DEV`, `OPTIONAL`, `PEER` |
 | `ecosystem` | `str \| list[str]` | Package ecosystem (`pypi`, `npm`, `cargo`) |
@@ -113,6 +113,66 @@ If two matching rules have different priorities, the lower integer priority eval
 5. **Default Action Fallback**: If no rules or thresholds matched, the policy `default_action` applies.
 
 ---
+
+
+
+## Persistence (CLI → API → UI)
+
+When a scan evaluates a policy (CLI `vuln-ai scan` or API evaluate), the policy document is upserted by name into the local database and an evaluation snapshot is stored against the scan. This makes `GET /api/v1/policies` and the Policies console reflect the same policy used during enforcement.
+
+## Minimal Valid Policy
+
+Copy-paste and run `vuln-ai policy validate <file>`:
+
+```yaml
+version: "1"
+policy:
+  name: "docs-minimal-policy"
+  thresholds:
+    fail_on:
+      - "CRITICAL"
+    fail_on_review: false
+  rules: []
+  default_action: "ALLOW"
+```
+
+## Realistic Policy With Review And Accept-Risk
+
+```yaml
+version: "1"
+policy:
+  name: "docs-realistic-policy"
+  description: "Realistic baseline with review and accept-risk actions"
+  thresholds:
+    fail_on:
+      - "CRITICAL"
+      - "HIGH"
+    fail_on_review: true
+  rules:
+    - id: "block-kev"
+      description: "Block actively exploited vulnerabilities"
+      when:
+        has_kev_evidence: true
+      action: "BLOCK"
+      reason: "Present in CISA KEV"
+      priority: 10
+    - id: "review-conflicts"
+      description: "Require review on source conflicts"
+      when:
+        conflict_detected: true
+      action: "REQUIRE_REVIEW"
+      reason: "Advisory sources disagree"
+      priority: 20
+    - id: "accept-dev-medium"
+      description: "Accept medium risk in development scope"
+      when:
+        scope: "DEV"
+        severity: "MEDIUM"
+      action: "ACCEPT_RISK"
+      reason: "Non-production dependency"
+      priority: 80
+  default_action: "ALLOW"
+```
 
 ## Safety & Security Constraints
 - **1MB File Limit**: Policy files larger than 1,048,576 bytes are rejected.
