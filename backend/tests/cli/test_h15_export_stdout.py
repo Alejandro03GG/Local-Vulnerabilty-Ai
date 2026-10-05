@@ -62,7 +62,9 @@ async def seeded_cli_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     return proj_dir
 
 
-def test_cli_scan_json_output_file_not_dumped_to_stdout(seeded_cli_env: Path, tmp_path: Path) -> None:
+def test_cli_scan_json_output_file_not_dumped_to_stdout(
+    seeded_cli_env: Path, tmp_path: Path
+) -> None:
     out = tmp_path / "scan-out.json"
     result = runner.invoke(
         app,

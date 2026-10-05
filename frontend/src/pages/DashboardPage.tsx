@@ -109,7 +109,8 @@ export const DashboardPage: React.FC = () => {
     m.applicability !== 'likely_not_affected' && m.applicability !== 'LIKELY_NOT_AFFECTED';
 
   const riskDistribution = {
-    critical: matches.filter((m) => riskLevel(m) === 'CRITICAL' && isTechnicallyApplicable(m)).length,
+    critical: matches.filter((m) => riskLevel(m) === 'CRITICAL' && isTechnicallyApplicable(m))
+      .length,
     high: matches.filter((m) => riskLevel(m) === 'HIGH' && isTechnicallyApplicable(m)).length,
     medium: matches.filter((m) => riskLevel(m) === 'MEDIUM' && isTechnicallyApplicable(m)).length,
     low: matches.filter((m) => riskLevel(m) === 'LOW' && isTechnicallyApplicable(m)).length,

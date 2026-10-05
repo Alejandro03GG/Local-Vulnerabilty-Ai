@@ -21,7 +21,10 @@ export const ScanStatusBadge: React.FC<ScanStatusBadgeProps> = ({ status, classN
           data-testid="badge-status-running"
           title={label}
         >
-          <Loader2 className="w-3.5 h-3.5 shrink-0 mt-0.5 animate-spin text-blue-400" aria-hidden="true" />
+          <Loader2
+            className="w-3.5 h-3.5 shrink-0 mt-0.5 animate-spin text-blue-400"
+            aria-hidden="true"
+          />
           <span className="min-w-0">{label}</span>
         </span>
       );

@@ -51,7 +51,6 @@ class CargoLockScanner:
         graph = self.scan_graph(project_path)
         return graph.resolve_components()
 
-
     def _locate_cargo_lock(self, project_path: Path, *, max_up: int = 4) -> Path | None:
         """Find Cargo.lock in project_path or a limited number of parent directories."""
         current = project_path.resolve()
@@ -273,7 +272,6 @@ class CargoLockScanner:
                 )
                 graph.add_node(node)
 
-
     @staticmethod
     def _resolve_path_dependency_version(manifest_path: Path, path_spec: str) -> str | None:
         """Resolve version for a Cargo path dependency by reading its Cargo.toml.
@@ -287,8 +285,13 @@ class CargoLockScanner:
             if project_root not in dep_manifest.parents and dep_manifest.parent != project_root:
                 # Allow sibling paths under a shared workspace parent (one level up).
                 workspace_root = project_root.parent
-                if workspace_root not in dep_manifest.parents and dep_manifest.parent != workspace_root:
-                    logger.debug("Refusing path dependency outside workspace tree: %s", dep_manifest)
+                if (
+                    workspace_root not in dep_manifest.parents
+                    and dep_manifest.parent != workspace_root
+                ):
+                    logger.debug(
+                        "Refusing path dependency outside workspace tree: %s", dep_manifest
+                    )
                     return None
             if not dep_manifest.is_file():
                 return None

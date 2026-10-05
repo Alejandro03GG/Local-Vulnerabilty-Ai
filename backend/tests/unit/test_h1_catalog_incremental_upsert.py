@@ -21,9 +21,7 @@ def _record(canonical_id: str, *, cve_id: str | None = None) -> VulnerabilityRec
         source_name="OSV",
         product="pkg",
         vulnerability_name=canonical_id,
-        identifiers=[
-            VulnerabilityIdentifier(identifier_type="OTHER", identifier=canonical_id)
-        ],
+        identifiers=[VulnerabilityIdentifier(identifier_type="OTHER", identifier=canonical_id)],
         source_records=[
             VulnerabilitySourceRecord(
                 source_name="OSV",

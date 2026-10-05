@@ -91,9 +91,7 @@ class SourceService:
 
         if sync_result.success:
             # CISA KEV provides a complete feed snapshot; OSV/NVD syncs are partial.
-            prune_missing = (
-                db_source.source_type == "cisa_kev" and bool(source_impl.records)
-            )
+            prune_missing = db_source.source_type == "cisa_kev" and bool(source_impl.records)
             await self._vuln_repo.upsert_vulnerabilities(
                 source_id=db_source.id,
                 records=source_impl.records,

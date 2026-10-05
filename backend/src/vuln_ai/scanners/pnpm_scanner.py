@@ -37,7 +37,6 @@ _MAX_LOCKFILE_SIZE = 30 * 1024 * 1024
 _PNPM_PKG_KEY_RE = re.compile(r"^/?(?P<name>(?:@[^/@]+/)?[^/@()]+)[@/](?P<version>[^()_]+)")
 
 
-
 def _load_pnpm_lock_yaml(content: str) -> dict:
     """Parse pnpm-lock.yaml, including multi-document streams (pnpm 9+).
 

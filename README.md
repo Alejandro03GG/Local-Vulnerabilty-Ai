@@ -8,7 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Coverage](https://img.shields.io/badge/Coverage-95%25+-success)](backend/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status: Release Ready](https://img.shields.io/badge/Status-v1.1.2%20Release%20Ready-blue.svg)](CHANGELOG.md)
+[![Status: Release Ready](https://img.shields.io/badge/Status-v1.1.3%20Release%20Ready-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -362,8 +362,8 @@ Distributed under the **MIT License**. See **[LICENSE](LICENSE)** for the full t
 
 ## Status
 
-**Version 1.1.2 — Release Ready**  
-Production-ready open-source release including Stage 19.2 post-retest hardening (policy persistence, native OSV sync robustness, Cargo path versions, policy docs, clean fixture) on top of v1.1.1.
+**Version 1.1.3 — Release Ready**  
+Production-ready open-source release including Stage 19.2 post-retest hardening plus CI format-gate fixes on top of v1.1.2.
 
 ## Stage 19.2 — Post-Retest Hardening
 

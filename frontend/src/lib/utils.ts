@@ -50,4 +50,3 @@ export function badgeClassName(...extra: Array<string | undefined>): string {
     ...extra,
   );
 }
-

@@ -334,7 +334,6 @@ class ComponentRepository:
         return list(result.scalars().all()), total
 
 
-
 class SourceRepository:
     """Data access for vulnerability sources."""
 
@@ -870,9 +869,9 @@ class VulnerabilityRepository:
             # Promote empty winner fields from loser
             if not winner.cve_id and loser.cve_id:
                 winner.cve_id = loser.cve_id
-            if (not winner.canonical_id or not winner.canonical_id.upper().startswith("CVE-")) and (
-                loser.canonical_id or ""
-            ).upper().startswith("CVE-"):
+            if (
+                not winner.canonical_id or not winner.canonical_id.upper().startswith("CVE-")
+            ) and (loser.canonical_id or "").upper().startswith("CVE-"):
                 winner.canonical_id = loser.canonical_id
                 winner.cve_id = loser.cve_id or loser.canonical_id
 

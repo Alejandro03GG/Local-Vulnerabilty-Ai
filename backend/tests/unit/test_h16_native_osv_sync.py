@@ -43,9 +43,7 @@ def _osv_record(
         source_name="OSV",
         product=product,
         vulnerability_name=canonical_id,
-        identifiers=[
-            VulnerabilityIdentifier(identifier_type="OTHER", identifier=i) for i in ids
-        ],
+        identifiers=[VulnerabilityIdentifier(identifier_type="OTHER", identifier=i) for i in ids],
         source_records=[
             VulnerabilitySourceRecord(
                 source_name="OSV",
@@ -116,7 +114,9 @@ async def _count_idents(session: AsyncSession) -> int:
 
 
 @pytest.fixture
-async def osv_sync_env(db_session: AsyncSession) -> tuple[SourceService, ControllableOSVSource, Any]:
+async def osv_sync_env(
+    db_session: AsyncSession,
+) -> tuple[SourceService, ControllableOSVSource, Any]:
     osv = ControllableOSVSource()
     registry = SourceRegistry()
     registry.register(osv)

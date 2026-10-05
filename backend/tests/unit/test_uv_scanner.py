@@ -18,7 +18,9 @@ def test_uv_scanner_can_scan(tmp_path: Path) -> None:
 
 def test_uv_lock_resolves_exact_versions_and_edges(tmp_path: Path) -> None:
     for name in ("uv.lock", "pyproject.toml"):
-        (tmp_path / name).write_text((FIXTURES / name).read_text(encoding="utf-8"), encoding="utf-8")
+        (tmp_path / name).write_text(
+            (FIXTURES / name).read_text(encoding="utf-8"), encoding="utf-8"
+        )
 
     scanner = UvLockScanner()
     graph = scanner.scan_graph(tmp_path)

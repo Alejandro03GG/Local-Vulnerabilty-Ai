@@ -20,16 +20,12 @@ router = APIRouter(tags=["Components"])
 )
 async def list_components(
     service: Annotated[ComponentService, Depends(get_component_service)],
-    project_id: Annotated[
-        str | None, Query(description="Optional project ID filter")
-    ] = None,
+    project_id: Annotated[str | None, Query(description="Optional project ID filter")] = None,
     page: Annotated[int, Query(ge=1, description="Page number (1-based)")] = 1,
     page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
 ) -> PaginatedResponse[ComponentResponse]:
     """List detected components globally or filtered by project_id (frontend contract)."""
-    return await service.list_components(
-        project_id=project_id, page=page, page_size=page_size
-    )
+    return await service.list_components(project_id=project_id, page=page, page_size=page_size)
 
 
 @router.get(

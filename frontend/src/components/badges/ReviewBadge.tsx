@@ -15,10 +15,7 @@ export const ReviewBadge: React.FC<ReviewBadgeProps> = ({ requiresReview, classN
     const label = t('badges.review.required');
     return (
       <span
-        className={badgeClassName(
-          'bg-amber-500/15 text-amber-400 border-amber-500/30',
-          className,
-        )}
+        className={badgeClassName('bg-amber-500/15 text-amber-400 border-amber-500/30', className)}
         data-testid="badge-review-required"
         title={label}
       >

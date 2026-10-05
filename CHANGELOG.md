@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-10-05
+
+### Fixed
+- CI Quality Gates: apply Ruff/Prettier formatting so backend and frontend format checks pass on the Stage 19.2 release line.
+
 ## [1.1.2] - 2026-10-05
 
 ### Fixed

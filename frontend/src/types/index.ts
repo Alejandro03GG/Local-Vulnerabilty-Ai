@@ -207,12 +207,7 @@ export interface Match {
   conflicts: SourceConflict[];
 }
 
-export type SourceStatus =
-  | 'active'
-  | 'syncing'
-  | 'error'
-  | 'never_synced'
-  | 'disabled';
+export type SourceStatus = 'active' | 'syncing' | 'error' | 'never_synced' | 'disabled';
 
 export interface Source {
   id: string;

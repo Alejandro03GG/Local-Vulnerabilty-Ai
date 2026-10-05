@@ -105,7 +105,9 @@ class MatchService:
                     cwes = json.loads(db_match.vulnerability.cwes)
             canonical = (db_match.vulnerability.canonical_id or "").strip()
             if not canonical:
-                canonical = (db_match.vulnerability.cve_id or "").strip() or db_match.vulnerability.id
+                canonical = (
+                    db_match.vulnerability.cve_id or ""
+                ).strip() or db_match.vulnerability.id
             vuln_resp = VulnerabilityResponse(
                 id=db_match.vulnerability.id,
                 canonical_id=canonical,

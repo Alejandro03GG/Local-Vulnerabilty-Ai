@@ -31,7 +31,7 @@ def test_discover_excludes_node_modules_and_venv(tmp_path: Path):
     _write(tmp_path / "requirements.txt", "requests==2.31.0\n")
     _write(tmp_path / "node_modules" / "evil" / "package.json", "{}\n")
     _write(tmp_path / ".venv" / "lib" / "requirements.txt", "secret==1.0\n")
-    _write(tmp_path / "target" / "debug" / "Cargo.toml", "[package]\nname=\"x\"\n")
+    _write(tmp_path / "target" / "debug" / "Cargo.toml", '[package]\nname="x"\n')
     roots = discover_project_roots(tmp_path)
     root_names = {r.name for r in roots}
     assert "node_modules" not in root_names
@@ -70,9 +70,9 @@ def test_scan_graph_python_npm(tmp_path: Path):
     assert "ms" in names
     # provenance preserved
     by_name = {c.name: c for c in comps}
-    assert "backend" in by_name["requests"].source_file or by_name["requests"].source_file.endswith(
-        "requirements.txt"
-    )
+    assert "backend" in by_name["requests"].source_file or by_name[
+        "requests"
+    ].source_file.endswith("requirements.txt")
 
 
 def test_scan_graph_multiple_same_ecosystem(tmp_path: Path):

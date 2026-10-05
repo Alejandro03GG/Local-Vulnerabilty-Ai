@@ -241,5 +241,4 @@ describe('Policy and Suppression Views (Etapa 16)', () => {
     });
     expect(screen.getByText(/balanced-policy/i)).toBeInTheDocument();
   });
-
 });

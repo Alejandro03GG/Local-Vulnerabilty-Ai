@@ -18,10 +18,7 @@ export const ApplicabilityBadge: React.FC<ApplicabilityBadgeProps> = ({ status, 
       const label = t('badges.applicability.likelyAffected');
       return (
         <span
-          className={badgeClassName(
-            'bg-rose-500/10 text-rose-400 border-rose-500/30',
-            className,
-          )}
+          className={badgeClassName('bg-rose-500/10 text-rose-400 border-rose-500/30', className)}
           data-testid="badge-likely-affected"
           title={label}
         >
@@ -76,10 +73,7 @@ export const ApplicabilityBadge: React.FC<ApplicabilityBadgeProps> = ({ status, 
           data-testid="badge-detected"
           title={label}
         >
-          <ShieldAlert
-            className="w-3.5 h-3.5 shrink-0 mt-0.5 text-purple-400"
-            aria-hidden="true"
-          />
+          <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5 text-purple-400" aria-hidden="true" />
           <span className="min-w-0">{label}</span>
         </span>
       );

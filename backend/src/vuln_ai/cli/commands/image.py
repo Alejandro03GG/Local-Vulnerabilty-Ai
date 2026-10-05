@@ -236,9 +236,7 @@ def scan_image_command(
 
             image_id = run_async_cli(_persist_dockerfile())
             if image_id:
-                console_stderr.print(
-                    f"[dim]Persisted Dockerfile AST as image {image_id}[/dim]"
-                )
+                console_stderr.print(f"[dim]Persisted Dockerfile AST as image {image_id}[/dim]")
 
             if fmt == "json":
                 out_bytes = doc.model_dump_json(indent=2).encode("utf-8")
